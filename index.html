@@ -3,387 +3,537 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Peak Hour Analysis - Top 3 Rankings</title>
+    <title>Audit M-Flow - Intelligent Analytics</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Inter:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg-main: #f1f5f9;
+            --accent: #2563eb; 
+            --surface: #ffffff;
+        }
         body {
             font-family: 'Sarabun', sans-serif;
-            background-color: #f8fafc;
+            background-color: var(--bg-main);
+            color: #334155;
+            min-height: 100vh;
         }
-        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .chart-container { height: 320px; position: relative; }
-        .tab-active { 
-            background-color: #2563eb !important; 
-            color: white !important;
-            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+        .header-font { font-family: 'Chakra Petch', sans-serif; }
+        .inter-font { font-family: 'Inter', sans-serif; }
+        
+        .main-container {
+            max-width: 1300px;
+            margin: 0 auto;
         }
+
+        .glass-card {
+            background: var(--surface);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            border-radius: 1.25rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02), 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+
+        .audit-logo-text {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0px 4px 12px rgba(59, 130, 246, 0.15);
+            display: inline-block;
+        }
+
+        .input-focus-container {
+            transition: all 0.3s ease;
+        }
+        .input-focus-container:focus-within {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+
+        .nav-tab {
+            padding: 0.625rem 1.25rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            font-size: 0.8125rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .nav-tab-active {
+            background-color: var(--accent);
+            color: white;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+        }
+        .nav-tab-inactive {
+            background-color: transparent;
+            color: #64748b;
+        }
+        .nav-tab-inactive:hover {
+            background-color: #e2e8f0;
+            color: #1e293b;
+        }
+
+        #dashboardContent {
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+        .view-hidden {
+            opacity: 0;
+            transform: translateY(5px);
+            pointer-events: none;
+        }
+        .view-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        @keyframes softSlideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-soft { animation: softSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+        .chart-container { position: relative; height: 420px; width: 100%; }
+
+        .rank-item {
+            border-radius: 0.85rem;
+            padding: 0.85rem 1rem;
+            border: 1px solid #f1f5f9;
+            background: #fff;
+            transition: all 0.3s ease;
+        }
+        .rank-item:hover {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            transform: translateY(-1px);
+        }
+        .rank-gold { border-left: 4px solid #1e40af; background: linear-gradient(to right, #eff6ff, #ffffff); }
+        .rank-silver { border-left: 4px solid #10b981; background: linear-gradient(to right, #f0fdf4, #ffffff); }
+        .rank-bronze { border-left: 4px solid #f59e0b; background: linear-gradient(to right, #fffbeb, #ffffff); }
+
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
     </style>
 </head>
-<body class="p-4 md:p-8">
-    <div class="max-w-[1400px] mx-auto bg-white rounded-[2rem] shadow-2xl shadow-blue-900/5 overflow-hidden">
-        <!-- Header -->
-        <div class="bg-slate-900 p-8 text-white flex flex-col md:flex-row justify-between items-center gap-4">
-            <div>
-                <h1 class="text-3xl font-black tracking-tight">Data Analysis Dashboard</h1>
-                <p class="text-slate-400 mt-1">วิเคราะห์ความหนาแน่นงานและจัดอันดับ Peak Hour 3 อันดับแรก</p>
+<body class="py-6 px-4 sm:px-6 lg:py-10">
+    <div class="main-container space-y-6">
+        
+        <!-- Navbar -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-blue-600 rounded-xl shadow-lg shadow-blue-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold header-font leading-tight">
+                        <span class="audit-logo-text">Audit M-Flow</span>
+                    </h1>
+                    <p class="text-xs font-medium text-slate-400 tracking-wide uppercase">Advanced Traffic & Density Audit System</p>
+                </div>
             </div>
-            <div class="flex gap-3">
-                <button onclick="clearData()" class="bg-white/10 hover:bg-red-500/20 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all border border-white/10 flex items-center gap-2">
-                    ล้างข้อมูล
+            <div class="flex items-center gap-4">
+                <div id="statusIndicator" class="flex items-center gap-2 px-3 py-1.5 bg-white rounded-full border border-slate-200 shadow-sm">
+                    <span class="relative flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-slate-400 opacity-75"></span>
+                        <span id="statusDot" class="relative inline-flex rounded-full h-2 w-2 bg-slate-400"></span>
+                    </span>
+                    <span id="statusText" class="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Ready</span>
+                </div>
+                <button onclick="clearData()" class="p-2 text-slate-400 hover:text-red-500 transition-colors" title="ล้างข้อมูล">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
                 </button>
             </div>
         </div>
 
-        <div class="p-8">
-            <!-- Input -->
-            <div class="mb-10">
-                <label class="block text-sm font-black text-slate-700 mb-3 uppercase tracking-wider">วางข้อมูลดิบ (Trip Data)</label>
-                <div class="relative">
+        <!-- Input Section -->
+        <div class="glass-card p-2 sm:p-3 input-focus-container">
+            <div class="flex flex-col md:flex-row gap-3">
+                <div class="flex-grow">
                     <textarea 
                         id="rawInput" 
-                        rows="3" 
-                        placeholder="วางข้อมูลที่มี Trip ID (M2026...)"
-                        class="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 focus:ring-0 outline-none font-mono text-sm transition-all"
+                        rows="1" 
+                        placeholder="วางข้อมูลดิบ TRIP จากระบบ M-Flow เพื่อเริ่มวิเคราะห์..."
+                        class="w-full bg-transparent border-none py-3 px-4 text-sm font-medium text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-0 resize-none min-h-[48px]"
                     ></textarea>
-                    <button 
-                        onclick="processData()"
-                        class="absolute bottom-4 right-4 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl font-bold shadow-lg transition-all"
-                    >
-                        วิเคราะห์ข้อมูล
-                    </button>
                 </div>
+                <button 
+                    onclick="processData()"
+                    class="h-[48px] px-8 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm transition-all shadow-md hover:shadow-blue-200 active:scale-95 flex items-center justify-center gap-2"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clip-rule="evenodd" />
+                    </svg>
+                    เริ่มตรวจสอบ
+                </button>
+            </div>
+        </div>
+
+        <!-- Dashboard -->
+        <div id="dashboardSection" class="hidden space-y-6">
+            <div id="miniStats" class="grid grid-cols-2 md:grid-cols-4 gap-4 animate-soft"></div>
+
+            <!-- Tab Navigation -->
+            <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+                <button id="overviewTab" onclick="switchView('overview')" class="nav-tab whitespace-nowrap">
+                    ภาพรวมเฉลี่ย
+                </button>
+                <button id="totalTab" onclick="switchView('total')" class="nav-tab whitespace-nowrap">
+                    ยอดรวมสะสม
+                </button>
+                <div id="dateTabs" class="flex gap-2 border-l border-slate-200 pl-2"></div>
             </div>
 
-            <!-- Analysis Dashboard -->
-            <div id="dashboardSection" class="hidden">
-                <!-- Navigation Tabs -->
-                <div class="mb-6 flex flex-col gap-4">
-                    <h2 class="text-xl font-black text-slate-800 flex items-center gap-2">
-                        <span class="w-2 h-8 bg-blue-600 rounded-full"></span>
-                        เลือกมุมมองข้อมูล
-                    </h2>
-                    <div id="viewTabs" class="flex flex-wrap gap-2 p-1 bg-slate-100 rounded-2xl w-fit">
-                        <button id="overviewTab" onclick="switchView('overview')" class="px-6 py-2 rounded-xl text-sm font-bold transition-all text-slate-500 hover:bg-slate-200">
-                            สรุปภาพรวมทั้งหมด
-                        </button>
-                        <div class="w-px h-6 bg-slate-300 my-auto mx-1"></div>
-                        <div id="dateTabs" class="flex flex-wrap gap-2">
-                            <!-- Date tabs will be injected here -->
+            <div id="dashboardContent" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch view-visible">
+                <!-- กราฟ -->
+                <div id="chartCard" class="lg:col-span-7 glass-card p-6 md:p-8 flex flex-col">
+                    <div class="flex justify-between items-start mb-6">
+                        <div>
+                            <h2 id="chartTitle" class="text-lg font-bold text-slate-800 header-font">รายงานความหนาแน่น</h2>
+                            <p id="chartSub" class="text-xs text-slate-400 font-medium">แสดงปริมาณงานช่วงเวลา 08:00 - 17:00</p>
                         </div>
+                    </div>
+                    <div class="chart-container flex-grow">
+                        <canvas id="peakChart"></canvas>
                     </div>
                 </div>
 
-                <!-- Active Content -->
-                <div id="analysisContent">
-                    <!-- Dynamic analysis content -->
+                <!-- ลำดับ -->
+                <div class="lg:col-span-5 flex flex-col h-full">
+                    <div class="flex items-center justify-between px-2 mb-3">
+                        <h3 id="rankTitle" class="text-xs font-extrabold text-slate-400 uppercase tracking-widest">ลำดับปริมาณงาน (พีค)</h3>
+                        <span id="rankCount" class="text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">-</span>
+                    </div>
+                    <div id="rankSection" class="flex-grow space-y-2 overflow-y-auto custom-scroll pr-1.5" style="max-height: 500px;"></div>
                 </div>
             </div>
+        </div>
 
-            <!-- Empty State -->
-            <div id="emptyState" class="py-24 text-center border-4 border-dashed border-slate-50 rounded-[2.5rem]">
-                <div class="text-slate-300 mb-4 flex justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 17v-2m3 2v-4m3 2v-6m-9-3H9m12 0h-3.586a1 1 0 01-.707-.293l-1.414-1.414A1 1 0 0015.586 3H8.414a1 1 0 00-.707.293L6.293 4.707A1 1 0 015.586 5H2a2 2 0 00-2 2v12a2 2 0 002 2h20a2 2 0 002-2V7a2 2 0 00-2-2z" />
-                    </svg>
-                </div>
-                <h3 class="text-xl font-bold text-slate-400 uppercase tracking-widest">ยังไม่มีข้อมูลสำหรับการวิเคราะห์</h3>
-                <p class="text-slate-400 mt-2">กรุณาวางข้อมูล Trip เพื่อเริ่มการจัดอันดับ Peak Hour</p>
+        <!-- Empty State -->
+        <div id="emptyState" class="py-40 text-center glass-card border-dashed border-2 bg-slate-50/40">
+            <div class="mx-auto w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-sm mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-slate-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
             </div>
+            <h3 class="text-slate-500 font-bold text-lg">ยินดีต้อนรับสู่ระบบ Audit M-Flow</h3>
+            <p class="text-slate-400 text-sm max-w-xs mx-auto">โปรดคัดลอกข้อมูล TRIP และวางลงในช่องด้านบนเพื่อเริ่มต้นการตรวจสอบความหนาแน่น</p>
         </div>
     </div>
 
-    <!-- Notification -->
-    <div id="toast" class="fixed bottom-8 right-8 bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-2xl translate-y-20 opacity-0 transition-all duration-300 font-bold z-50"></div>
+    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 px-6 py-3 bg-slate-900 text-white text-xs font-bold rounded-2xl shadow-2xl opacity-0 transition-all pointer-events-none z-50"></div>
 
     <script>
+        Chart.register(ChartDataLabels);
+
         let rawDataStore = [];
-        let currentMode = 'daily'; // 'daily' or 'overview'
+        let currentMode = 'overview';
         let selectedDate = null;
         let chartInstance = null;
 
+        const chartColors = [
+            { main: '#2563eb', light: 'rgba(37, 99, 235, 0.12)' }, 
+            { main: '#1d4ed8', light: 'rgba(29, 78, 216, 0.12)' }, 
+            { main: '#3b82f6', light: 'rgba(59, 130, 246, 0.12)' }
+        ];
+
+        function getRandomColor() {
+            return chartColors[Math.floor(Math.random() * chartColors.length)];
+        }
+
         function processData() {
-            let input = document.getElementById('rawInput').value.trim();
-            if (!input) {
-                showToast("กรุณากรอกข้อมูล");
-                return;
-            }
+            const inputEl = document.getElementById('rawInput');
+            let input = inputEl.value.trim();
+            if (!input) return showToast("⚠️ โปรดใส่ข้อมูลก่อน");
 
             input = input.replace(/"/g, '');
             const delimiter = "||TRIP||";
             const chunks = input.replace(/M2026/g, delimiter + "M2026").split(delimiter).filter(c => c.trim());
 
+            if (chunks.length === 0) return showToast("❌ ไม่พบรูปแบบข้อมูลที่ต้องการ");
+
+            const newEntries = [];
             chunks.forEach(chunk => {
                 const parts = chunk.split(/\s+/).filter(p => p.trim());
                 if (parts.length >= 5) {
-                    const adDate = parts[3];
-                    const adTime = parts[4];
-                    if (adTime && adTime.includes(':')) {
-                        const hour = adTime.split(':')[0] + ":00";
-                        rawDataStore.push({
-                            date: adDate,
-                            hour: hour,
-                            fullTime: adDate + " " + adTime,
-                            raw: parts
-                        });
+                    const dateStr = parts[3];
+                    const timeStr = parts[4];
+                    if (timeStr && timeStr.includes(':')) {
+                        const hourNum = parseInt(timeStr.split(':')[0]);
+                        const hour = hourNum.toString().padStart(2, '0') + ":00";
+                        if (hourNum >= 8 && hourNum <= 17) {
+                            newEntries.push({ date: dateStr, hour: hour });
+                        }
                     }
                 }
             });
 
-            const uniqueDates = [...new Set(rawDataStore.map(d => d.date))].sort((a,b) => {
-                const da = a.split('/').reverse().join('');
-                const db = b.split('/').reverse().join('');
-                return da.localeCompare(db);
-            });
-
+            rawDataStore = [...rawDataStore, ...newEntries];
+            const uniqueDates = [...new Set(rawDataStore.map(d => d.date))].sort((a,b) => a.localeCompare(b));
+            
             if (uniqueDates.length > 0) {
-                if (!selectedDate || !uniqueDates.includes(selectedDate)) {
-                    selectedDate = uniqueDates[0];
-                }
                 renderUI(uniqueDates);
+                document.getElementById('statusDot').classList.replace('bg-slate-400', 'bg-blue-500');
+                document.getElementById('statusText').innerText = "Processing";
             }
             
-            document.getElementById('rawInput').value = '';
-            showToast("วิเคราะห์ข้อมูลสำเร็จ");
+            inputEl.value = '';
+            showToast(`✅ เพิ่ม ${newEntries.length} รายการ (08:00 - 17:00)`);
         }
 
         function renderUI(dates) {
             document.getElementById('emptyState').classList.add('hidden');
-            document.getElementById('dashboardSection').classList.remove('hidden');
+            const dash = document.getElementById('dashboardSection');
+            dash.classList.remove('hidden');
 
-            // Render Tabs
-            const overviewBtn = document.getElementById('overviewTab');
-            if (currentMode === 'overview') {
-                overviewBtn.className = "px-6 py-2 rounded-xl text-sm font-bold transition-all tab-active";
-            } else {
-                overviewBtn.className = "px-6 py-2 rounded-xl text-sm font-bold transition-all text-slate-500 hover:bg-slate-200";
-            }
+            // Update Basic Tabs
+            document.getElementById('overviewTab').className = `nav-tab ${currentMode === 'overview' ? 'nav-tab-active' : 'nav-tab-inactive'}`;
+            document.getElementById('totalTab').className = `nav-tab ${currentMode === 'total' ? 'nav-tab-active' : 'nav-tab-inactive'}`;
 
             const tabsContainer = document.getElementById('dateTabs');
             tabsContainer.innerHTML = dates.map(date => {
                 const isActive = (currentMode === 'daily' && selectedDate === date);
-                return `
-                    <button 
-                        onclick="switchDate('${date}')" 
-                        class="px-6 py-2 rounded-xl text-sm font-bold transition-all ${isActive ? 'tab-active' : 'text-slate-500 hover:bg-slate-200'}"
-                    >
-                        ${date}
-                    </button>
-                `;
+                return `<button onclick="switchDate('${date}')" class="nav-tab whitespace-nowrap ${isActive ? 'nav-tab-active' : 'nav-tab-inactive'}">${date}</button>`;
             }).join('');
 
-            if (currentMode === 'overview') {
-                updateOverviewContent();
-            } else {
-                updateDailyContent();
-            }
+            updateAnalysis();
         }
 
         function switchView(mode) {
-            currentMode = mode;
-            const uniqueDates = [...new Set(rawDataStore.map(d => d.date))].sort((a,b) => {
-                const da = a.split('/').reverse().join('');
-                const db = b.split('/').reverse().join('');
-                return da.localeCompare(db);
-            });
-            renderUI(uniqueDates);
+            if (currentMode === mode) return;
+            const content = document.getElementById('dashboardContent');
+            content.classList.replace('view-visible', 'view-hidden');
+            
+            setTimeout(() => {
+                currentMode = mode;
+                updateAnalysis();
+                const dates = [...new Set(rawDataStore.map(d => d.date))].sort();
+                renderUI(dates);
+                content.classList.replace('view-hidden', 'view-visible');
+            }, 300);
         }
 
         function switchDate(date) {
-            currentMode = 'daily';
-            selectedDate = date;
-            switchView('daily');
-        }
-
-        function updateDailyContent() {
-            const dailyData = rawDataStore.filter(d => d.date === selectedDate);
-            renderAnalysisHtml(dailyData, `สรุปผลรายวัน (${selectedDate})`, false);
-        }
-
-        function updateOverviewContent() {
-            // Group by hour and date, then average
-            const uniqueDatesCount = new Set(rawDataStore.map(d => d.date)).size;
-            const hourCounts = {};
+            if (currentMode === 'daily' && selectedDate === date) return;
+            const content = document.getElementById('dashboardContent');
+            content.classList.replace('view-visible', 'view-hidden');
             
-            rawDataStore.forEach(d => {
-                hourCounts[d.hour] = (hourCounts[d.hour] || 0) + 1;
-            });
-
-            const avgData = Object.entries(hourCounts).map(([hour, count]) => ({
-                hour,
-                count: (count / uniqueDatesCount).toFixed(1),
-                rawCount: count
-            }));
-
-            renderAnalysisHtml(avgData, `สรุปภาพรวมเฉลี่ย (${uniqueDatesCount} วัน)`, true);
+            setTimeout(() => {
+                currentMode = 'daily';
+                selectedDate = date;
+                updateAnalysis();
+                const dates = [...new Set(rawDataStore.map(d => d.date))].sort();
+                renderUI(dates);
+                content.classList.replace('view-hidden', 'view-visible');
+            }, 300);
         }
 
-        function renderAnalysisHtml(data, title, isAverage) {
-            const content = document.getElementById('analysisContent');
-            
-            let displayData = [];
-            let totalReference = 0;
+        function updateAnalysis() {
+            let processedData = [];
+            let displayModeLabel = "";
+            let title = "";
+            let sub = "";
+            let currentStatsTotal = 0;
 
-            if (isAverage) {
-                // data is already processed array
-                displayData = data.sort((a,b) => b.count - a.count);
-                totalReference = displayData.reduce((acc, curr) => acc + parseFloat(curr.count), 0);
-            } else {
-                // data is raw filter
+            const totalItems = rawDataStore.length;
+            const totalDays = new Set(rawDataStore.map(d => d.date)).size;
+
+            if (currentMode === 'overview') {
                 const counts = {};
-                data.forEach(d => counts[d.hour] = (counts[d.hour] || 0) + 1);
-                totalReference = data.length;
-                displayData = Object.entries(counts)
-                    .sort((a, b) => b[1] - a[1])
-                    .map(([hour, count]) => ({ hour, count }));
+                rawDataStore.forEach(d => counts[d.hour] = (counts[d.hour] || 0) + 1);
+                processedData = Object.entries(counts).map(([h, c]) => ({ 
+                    hour: h, 
+                    count: Math.round(c / totalDays) 
+                }));
+                displayModeLabel = "Avg";
+                currentStatsTotal = totalItems;
+                title = "รายงานภาพรวม Audit (เฉลี่ย)";
+                sub = `ประมวลผลช่วงเวลา 08:00 - 17:00 (เฉลี่ยจากทั้งหมด ${totalDays} วัน)`;
+                document.getElementById('rankTitle').innerText = "อันดับงาน (เฉลี่ยรายชั่วโมง)";
+            } 
+            else if (currentMode === 'total') {
+                const counts = {};
+                rawDataStore.forEach(d => counts[d.hour] = (counts[d.hour] || 0) + 1);
+                processedData = Object.entries(counts).map(([h, c]) => ({ 
+                    hour: h, 
+                    count: c 
+                }));
+                displayModeLabel = "Total";
+                currentStatsTotal = totalItems;
+                title = "รายงานยอดรวมสะสมสุทธิ";
+                sub = `แสดงยอดรวม TRIP ทั้งหมด ${totalItems} รายการ แยกตามช่วงเวลา (สะสม ${totalDays} วัน)`;
+                document.getElementById('rankTitle').innerText = "อันดับยอดสะสม (สุทธิ)";
+            }
+            else {
+                const dailyData = rawDataStore.filter(d => d.date === selectedDate);
+                const counts = {};
+                dailyData.forEach(d => counts[d.hour] = (counts[d.hour] || 0) + 1);
+                processedData = Object.entries(counts).map(([h, c]) => ({ hour: h, count: c }));
+                displayModeLabel = "Trips";
+                currentStatsTotal = dailyData.length;
+                title = `Audit ประจำวันที่ ${selectedDate}`;
+                sub = `วิเคราะห์การจราจรช่วง 08:00 - 17:00 (รวม ${dailyData.length} TRIP)`;
+                document.getElementById('rankTitle').innerText = "อันดับงาน (รายวัน)";
             }
 
-            if (totalReference === 0) return;
-
-            const sortedHours = displayData.map(item => ({
-                ...item,
-                percent: ((item.count / totalReference) * 100).toFixed(1)
-            }));
-
-            const top3 = sortedHours.slice(0, 3);
+            document.getElementById('chartTitle').innerText = title;
+            document.getElementById('chartSub').innerText = sub;
             
-            let rankingsHtml = top3.map((item, idx) => {
-                let rankClass = idx === 0 ? 'border-amber-100 ring-4 ring-amber-50' : 'border-slate-100';
-                let iconBg = idx === 0 ? 'bg-amber-100 text-amber-600' : (idx === 1 ? 'bg-slate-100 text-slate-500' : 'bg-orange-50 text-orange-700');
-                let textCol = idx === 0 ? 'text-amber-600' : 'text-slate-800';
-
-                return `
-                    <div class="bg-white border-2 ${rankClass} p-5 rounded-2xl flex items-center justify-between transition-all hover:scale-[1.02]">
-                        <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 rounded-xl flex items-center justify-center font-black text-xl ${iconBg}">
-                                ${idx + 1}
-                            </div>
-                            <div>
-                                <div class="text-xs font-black text-slate-400 uppercase tracking-tighter">ช่วงเวลา</div>
-                                <div class="text-lg font-black text-slate-800">${item.hour}</div>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-2xl font-black ${textCol}">${item.percent}%</div>
-                            <div class="text-xs font-bold text-slate-400">${item.count} ${isAverage ? 'งาน(เฉลี่ย)' : 'งาน'}</div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            let otherHoursHtml = sortedHours.map(item => {
-                const isTop = top3.some(t => t.hour === item.hour);
-                if(isTop) return '';
-                return `
-                    <div class="flex flex-col gap-1 mb-3">
-                        <div class="flex justify-between items-center text-sm">
-                            <span class="font-bold text-slate-500">${item.hour}</span>
-                            <span class="text-xs font-black text-slate-700">${item.percent}% (${item.count} ${isAverage ? 'งาน(เฉลี่ย)' : 'งาน'})</span>
-                        </div>
-                        <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                            <div class="bg-slate-300 h-full" style="width: ${item.percent}%"></div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            content.innerHTML = `
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-                    <div class="lg:col-span-2 bg-slate-50 rounded-[2rem] p-8 border border-slate-100">
-                        <div class="flex justify-between items-center mb-6">
-                            <h3 class="text-lg font-black text-slate-800">${title}</h3>
-                            <span class="text-xs font-bold text-slate-400 bg-white px-3 py-1 rounded-full border border-slate-200">
-                                ${isAverage ? 'สถานะ: ข้อมูลภาพรวม' : 'สถานะ: ข้อมูลรายวัน'}
-                            </span>
-                        </div>
-                        <div class="chart-container">
-                            <canvas id="peakChart"></canvas>
-                        </div>
-                    </div>
-                    <div class="space-y-6">
-                        <h3 class="text-lg font-black text-slate-800 flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-amber-500" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2l5.23.516a1 1 0 01.544 1.745l-3.886 3.633.91 5.31a1 1 0 01-1.464 1.066l-4.48-2.45-4.48 2.45a1 1 0 01-1.464-1.066l.91-5.31-3.886-3.633a1 1 0 01.544-1.745l5.23-.516 2.179-4.456A1 1 0 0112 2z" clip-rule="evenodd" />
-                            </svg>
-                            Top 3 Peak Hour ${isAverage ? '(Average)' : ''}
-                        </h3>
-                        <div class="space-y-4">
-                            ${rankingsHtml}
-                        </div>
-                        <div class="mt-8 pt-6 border-t border-slate-100">
-                            <p class="text-xs font-bold text-slate-400 uppercase mb-4 tracking-widest">สัดส่วนเวลาอื่นๆ</p>
-                            <div class="space-y-1 max-h-64 overflow-y-auto pr-2 custom-scroll">
-                                ${otherHoursHtml}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            const chartData = {};
-            sortedHours.forEach(h => chartData[h.hour] = h.count);
-            renderChart(chartData, isAverage);
+            renderMiniStats(currentStatsTotal, totalDays, processedData);
+            renderView(processedData, displayModeLabel);
         }
 
-        function renderChart(counts, isAverage) {
-            const canvas = document.getElementById('peakChart');
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            const labels = Object.keys(counts).sort();
-            const data = labels.map(l => counts[l]);
+        function renderMiniStats(displayTotal, days, currentData) {
+            const peak = currentData.length ? Math.max(...currentData.map(d => d.count)) : 0;
+            const container = document.getElementById('miniStats');
+            const stats = [
+                { label: 'Data Points', val: displayTotal, color: 'text-blue-600' },
+                { label: 'Audit Days', val: days, color: 'text-slate-600' },
+                { label: 'Max Workload', val: peak, color: 'text-blue-800' },
+                { label: 'Active Slots', val: currentData.length, color: 'text-emerald-600' }
+            ];
 
-            if (chartInstance) chartInstance.destroy();
+            container.innerHTML = stats.map(s => `
+                <div class="glass-card p-4">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase mb-1">${s.label}</p>
+                    <p class="text-xl font-black inter-font ${s.color}">${s.val}</p>
+                </div>
+            `).join('');
+        }
 
-            const primaryColor = isAverage ? '#8b5cf6' : '#2563eb'; // Purple for avg, Blue for daily
+        function renderView(data, modeLabel) {
+            const sorted = [...data].sort((a,b) => b.count - a.count);
+            document.getElementById('rankCount').innerText = `${sorted.length} Slots`;
+            
+            const top3 = sorted.slice(0, 3);
+            const others = sorted.slice(3);
+            
+            const rankSection = document.getElementById('rankSection');
+            rankSection.style.opacity = '0';
+
+            setTimeout(() => {
+                let rankHtml = '';
+                top3.forEach((item, idx) => {
+                    const rankType = idx === 0 ? 'rank-gold' : idx === 1 ? 'rank-silver' : 'rank-bronze';
+                    const badge = idx === 0 ? '🏆 AUDIT RANK 1' : idx === 1 ? '🥈 RANK 2' : '🥉 RANK 3';
+                    rankHtml += `<div class="rank-item ${rankType} animate-soft" style="animation-delay: ${0.4 + (idx * 0.15)}s"><div class="flex justify-between items-center"><div class="flex flex-col"><span class="text-[9px] font-bold text-slate-400 tracking-wider uppercase">${badge}</span><span class="text-base font-black inter-font text-slate-800 leading-tight">${item.hour} น.</span></div><div class="text-right"><div class="text-lg font-black inter-font text-slate-900">${item.count}</div><div class="text-[9px] text-slate-400 font-bold uppercase leading-none">${modeLabel}</div></div></div></div>`;
+                });
+
+                if(others.length > 0) {
+                    rankHtml += `<div class="space-y-1 animate-soft" style="animation-delay: 0.8s">`;
+                    others.forEach((item, idx) => {
+                        rankHtml += `<div class="flex items-center justify-between py-1.5 px-3 bg-white/60 rounded-lg border border-slate-100 hover:bg-white transition-all"><div class="flex items-center gap-3"><span class="text-[10px] font-bold text-slate-300 w-4">${idx + 4}</span><span class="text-[11px] font-bold text-slate-600">${item.hour} น.</span></div><div class="flex items-center gap-2"><span class="text-[11px] font-black inter-font text-slate-800">${item.count}</span><span class="text-[9px] font-bold text-slate-400 uppercase">${modeLabel}</span></div></div>`;
+                    });
+                    rankHtml += `</div>`;
+                }
+                
+                rankSection.innerHTML = rankHtml;
+                rankSection.style.opacity = '1';
+
+                syncHeights();
+                renderChart(data, modeLabel);
+            }, 50);
+        }
+
+        function syncHeights() {
+            const chartCard = document.getElementById('chartCard');
+            const rankSection = document.getElementById('rankSection');
+            if (chartCard && rankSection && window.innerWidth >= 1024) {
+                const targetHeight = chartCard.offsetHeight - 45;
+                rankSection.style.maxHeight = targetHeight + 'px';
+            } else if (rankSection) {
+                rankSection.style.maxHeight = '500px';
+            }
+        }
+
+        function renderChart(data, label) {
+            const ctx = document.getElementById('peakChart').getContext('2d');
+            
+            const targetLabels = [];
+            for(let i=8; i<=17; i++) {
+                targetLabels.push(i.toString().padStart(2, '0') + ":00");
+            }
+            
+            const dataValues = targetLabels.map(l => data.find(d => d.hour === l)?.count || 0);
+            
+            const maxVal = Math.max(...dataValues, 1);
+            const calculatedStep = Math.ceil(maxVal / 5) || 1;
+            const themeColor = getRandomColor();
+
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
             const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-            gradient.addColorStop(0, isAverage ? 'rgba(139, 92, 246, 0.4)' : 'rgba(37, 99, 235, 0.4)');
+            gradient.addColorStop(0, themeColor.light);
             gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
 
             chartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: labels,
+                    labels: targetLabels,
                     datasets: [{
-                        label: isAverage ? 'จำนวนงานเฉลี่ย' : 'จำนวนงาน',
-                        data: data,
-                        borderColor: primaryColor,
-                        borderWidth: 4,
+                        label: label,
+                        data: dataValues,
+                        borderColor: themeColor.main,
+                        borderWidth: 3,
+                        pointRadius: 4,
+                        pointBackgroundColor: themeColor.main,
+                        pointHoverRadius: 7,
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderWidth: 3,
                         backgroundColor: gradient,
                         fill: true,
-                        tension: 0.4,
-                        pointBackgroundColor: '#ffffff',
-                        pointBorderColor: primaryColor,
-                        pointBorderWidth: 2,
-                        pointRadius: 6,
-                        pointHoverRadius: 8
+                        tension: 0.4
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
+                    animation: {
+                        duration: 800,
+                        easing: 'easeOutQuart'
+                    },
+                    interaction: { intersect: false, mode: 'index' },
+                    plugins: { 
                         legend: { display: false },
                         tooltip: {
-                            backgroundColor: '#0f172a',
-                            padding: 12,
-                            titleFont: { size: 14, weight: 'bold' },
-                            bodyFont: { size: 13 },
-                            cornerRadius: 12,
+                            backgroundColor: '#1e3a8a',
+                            titleFont: { size: 12, family: 'Sarabun' },
+                            bodyFont: { size: 12, family: 'Sarabun' },
+                            cornerRadius: 10,
                             displayColors: false
+                        },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            offset: 5,
+                            color: themeColor.main,
+                            font: { family: 'Inter', size: 10, weight: 'bold' },
+                            display: (ctx) => ctx.dataset.data[ctx.dataIndex] > 0,
+                            formatter: (value) => value
                         }
                     },
+                    layout: { padding: { top: 30 } },
                     scales: {
-                        y: {
+                        y: { 
                             beginAtZero: true,
+                            suggestedMax: maxVal + (calculatedStep * 0.5),
                             grid: { color: '#f1f5f9' },
-                            ticks: { font: { weight: 'bold' }, color: '#94a3b8' }
+                            ticks: { 
+                                color: '#94a3b8', 
+                                font: { size: 10, family: 'Inter' },
+                                stepSize: calculatedStep
+                            }
                         },
-                        x: {
+                        x: { 
                             grid: { display: false },
-                            ticks: { font: { weight: 'bold' }, color: '#94a3b8' }
+                            ticks: { 
+                                color: '#94a3b8', 
+                                font: { size: 10, family: 'Inter' }
+                            }
                         }
                     }
                 }
@@ -391,22 +541,27 @@
         }
 
         function clearData() {
+            if (rawDataStore.length === 0) return;
             rawDataStore = [];
-            selectedDate = null;
-            currentMode = 'daily';
             document.getElementById('dashboardSection').classList.add('hidden');
             document.getElementById('emptyState').classList.remove('hidden');
-            showToast("ล้างข้อมูลแล้ว");
+            document.getElementById('statusDot').className = 'relative inline-flex rounded-full h-2 w-2 bg-slate-400';
+            document.getElementById('statusText').innerText = "Ready";
+            showToast("🧹 ล้างข้อมูลเรียบร้อยแล้ว");
         }
 
         function showToast(msg) {
             const t = document.getElementById('toast');
             t.innerText = msg;
-            t.classList.remove('translate-y-20', 'opacity-0');
+            t.style.opacity = '1';
+            t.style.transform = 'translate(-50%, -20px)';
             setTimeout(() => {
-                t.classList.add('translate-y-20', 'opacity-0');
-            }, 3000);
+                t.style.opacity = '0';
+                t.style.transform = 'translate(-50%, 0px)';
+            }, 2500);
         }
+
+        window.addEventListener('resize', syncHeights);
     </script>
 </body>
 </html>
