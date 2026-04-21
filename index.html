@@ -155,7 +155,7 @@
             <div class="glass-card p-2 sm:p-3">
                 <div class="flex flex-col md:flex-row gap-3">
                     <div class="flex-grow">
-                        <textarea id="rawInput" rows="1" oninput="saveDraft()" placeholder="วางข้อมูล TRIP เพื่อเริ่มวิเคราะห์..." class="w-full bg-transparent border-none py-3 px-4 text-sm font-medium text-slate-700 focus:outline-none resize-none min-h-[48px]"></textarea>
+                        <textarea id="rawInput" rows="1" oninput="saveDraft()" placeholder="วางข้อมูล TRIP (M2026... หรือ A2026...) เพื่อเริ่มวิเคราะห์..." class="w-full bg-transparent border-none py-3 px-4 text-sm font-medium text-slate-700 focus:outline-none resize-none min-h-[48px]"></textarea>
                     </div>
                     <button onclick="processData()" class="h-[48px] px-8 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm shadow-md transition-all active:scale-95">เริ่มตรวจสอบ</button>
                 </div>
@@ -229,7 +229,7 @@
         <!-- Empty State -->
         <div id="emptyState" class="py-40 text-center glass-card border-dashed border-2 bg-slate-50/40">
             <h3 class="text-slate-500 font-bold text-lg">โปรดนำเข้าข้อมูล TRIP</h3>
-            <p class="text-slate-400 text-sm">ระบบจะประมวลผลช่วงเวลาเร่งด่วนให้อัตโนมัติ</p>
+            <p class="text-slate-400 text-sm">ระบบจะตรวจจับ M2026/A2026 และประมวลผลให้อัตโนมัติ</p>
         </div>
     </div>
 
@@ -331,8 +331,11 @@
             let input = inputEl.value.trim().replace(/"/g, '');
             if (!input) return;
 
-            const delimiter = "||TRIP||";
-            const chunks = input.replace(/M2026/g, delimiter + "M2026").split(delimiter).filter(c => c.trim());
+            // Updated Logic: Split by both M2026 and A2026
+            const delimiter = "||NEW_TRIP||";
+            // เราใช้ Regex ที่ครอบคลุมทั้ง M2026 และ A2026 ในการแบ่งชุดข้อมูล
+            const processedInput = input.replace(/(M2026|A2026)/g, delimiter + "$1");
+            const chunks = processedInput.split(delimiter).filter(c => c.trim());
 
             const newEntries = [];
             chunks.forEach(chunk => {
@@ -342,6 +345,7 @@
                     const timeStr = parts[4];
                     if (timeStr && timeStr.includes(':')) {
                         const h = parseInt(timeStr.split(':')[0]);
+                        // กรองเฉพาะเวลา 08:00 - 17:00 ตามความต้องการเดิม
                         if (h >= 8 && h <= 17) {
                             newEntries.push({ 
                                 date: dateStr, 
@@ -373,12 +377,12 @@
                 document.getElementById('statusDot').className = 'relative inline-flex rounded-full h-2 w-2 bg-blue-500';
                 
                 refreshUI();
-                showToast(`✅ วิเคราะห์ ${newEntries.length} รายการ และบันทึกประวัติแล้ว`);
+                showToast(`✅ วิเคราะห์ ${newEntries.length} รายการ (M/A 2026)`);
                 
                 inputEl.value = '';
                 localStorage.removeItem('mflow_trip_draft');
             } else {
-                showToast(`❌ ไม่พบข้อมูล TRIP ในรูปแบบที่ถูกต้อง`);
+                showToast(`❌ ไม่พบข้อมูล M2026 หรือ A2026 ที่ถูกต้อง`);
             }
         }
 
