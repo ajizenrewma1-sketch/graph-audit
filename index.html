@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Audit M-Flow - Day of Week Intelligent Analytics</title>
+    <title>Audit M-Flow - Day of Week Intelligent Analytics with Log</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
@@ -86,6 +86,37 @@
             to { opacity: 1; transform: translateY(0); }
         }
         .animate-soft { animation: softSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+        .history-pill {
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        .history-pill:hover {
+            background-color: #f8fafc;
+            border-color: #cbd5e1;
+        }
+        .delete-history-btn {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: #ef4444;
+            color: white;
+            border-radius: 999px;
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            z-index: 10;
+        }
+        .history-pill:hover .delete-history-btn {
+            opacity: 1;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="py-6 px-4 sm:px-6 lg:py-10">
@@ -111,7 +142,7 @@
                     <span id="statusDot" class="relative inline-flex rounded-full h-2 w-2 bg-slate-400"></span>
                     <span id="statusText" class="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Ready</span>
                 </div>
-                <button onclick="clearData()" class="p-2 text-slate-400 hover:text-red-500 transition-colors">
+                <button onclick="clearCurrentAnalysis()" class="p-2 text-slate-400 hover:text-red-500 transition-colors" title="ล้างข้อมูลการวิเคราะห์ปัจจุบัน (เก็บประวัติไว้)">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
@@ -120,12 +151,25 @@
         </div>
 
         <!-- Input Section -->
-        <div class="glass-card p-2 sm:p-3">
-            <div class="flex flex-col md:flex-row gap-3">
-                <div class="flex-grow">
-                    <textarea id="rawInput" rows="1" placeholder="วางข้อมูล TRIP เพื่อเริ่มวิเคราะห์..." class="w-full bg-transparent border-none py-3 px-4 text-sm font-medium text-slate-700 focus:outline-none resize-none min-h-[48px]"></textarea>
+        <div class="space-y-3">
+            <div class="glass-card p-2 sm:p-3">
+                <div class="flex flex-col md:flex-row gap-3">
+                    <div class="flex-grow">
+                        <textarea id="rawInput" rows="1" oninput="saveDraft()" placeholder="วางข้อมูล TRIP เพื่อเริ่มวิเคราะห์..." class="w-full bg-transparent border-none py-3 px-4 text-sm font-medium text-slate-700 focus:outline-none resize-none min-h-[48px]"></textarea>
+                    </div>
+                    <button onclick="processData()" class="h-[48px] px-8 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm shadow-md transition-all active:scale-95">เริ่มตรวจสอบ</button>
                 </div>
-                <button onclick="processData()" class="h-[48px] px-8 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm shadow-md transition-all active:scale-95">เริ่มตรวจสอบ</button>
+            </div>
+
+            <!-- Audit History Log -->
+            <div id="historyContainer" class="hidden animate-soft">
+                <div class="flex items-center justify-between px-2 mb-2">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ประวัติการตรวจสอบ (เก็บย้อนหลัง 7 วัน):</span>
+                    <button onclick="clearHistoryAll()" class="text-[9px] font-bold text-slate-400 hover:text-red-500 uppercase">ล้างประวัติทั้งหมด</button>
+                </div>
+                <div id="historyLog" class="flex gap-3 overflow-x-auto no-scrollbar pb-2 pt-1 px-1">
+                    <!-- History Pills will be injected here -->
+                </div>
             </div>
         </div>
 
@@ -192,13 +236,89 @@
         Chart.register(ChartDataLabels);
 
         let rawDataStore = [];
-        let aggMode = 'avg'; // 'avg' or 'total'
-        let selectionType = 'all'; // 'all', 'weekday', or 'date'
+        let auditLog = [];
+        let aggMode = 'avg'; 
+        let selectionType = 'all'; 
         let selectedWeekdayIdx = null;
         let selectedDateValue = null;
         let chartInstance = null;
 
         const dayNames = ["อาทิตย์", "จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์", "เสาร์"];
+
+        window.onload = function() {
+            // Load Draft
+            const savedDraft = localStorage.getItem('mflow_trip_draft');
+            if (savedDraft) {
+                document.getElementById('rawInput').value = savedDraft;
+            }
+
+            // Load Audit Log
+            const savedLog = localStorage.getItem('mflow_audit_history');
+            if (savedLog) {
+                auditLog = JSON.parse(savedLog);
+                // Auto-Retention: 7 Days
+                cleanOldHistory();
+            }
+        };
+
+        function saveDraft() {
+            const inputVal = document.getElementById('rawInput').value;
+            localStorage.setItem('mflow_trip_draft', inputVal);
+        }
+
+        // ฟังก์ชันล้างประวัติที่เก่ากว่า 7 วัน
+        function cleanOldHistory() {
+            const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+            const now = new Date().getTime();
+            
+            const originalLength = auditLog.length;
+            auditLog = auditLog.filter(log => {
+                const logTime = new Date(log.created_at).getTime();
+                return (now - logTime) < SEVEN_DAYS_MS;
+            });
+
+            if (originalLength !== auditLog.length) {
+                localStorage.setItem('mflow_audit_history', JSON.stringify(auditLog));
+            }
+            renderHistoryLog();
+        }
+
+        function renderHistoryLog() {
+            const container = document.getElementById('historyContainer');
+            const logEl = document.getElementById('historyLog');
+            
+            if (auditLog.length === 0) {
+                container.classList.add('hidden');
+                return;
+            }
+
+            container.classList.remove('hidden');
+            logEl.innerHTML = auditLog.map((log, idx) => `
+                <div class="history-pill shrink-0 flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg shadow-sm cursor-pointer" onclick="restoreHistory(${idx})">
+                    <button class="delete-history-btn" onclick="deleteSingleHistory(event, ${idx})">✕</button>
+                    <div class="flex flex-col">
+                        <span class="text-[8px] font-black text-slate-400 leading-none uppercase">${new Date(log.created_at).toLocaleDateString('th-TH', {day:'numeric', month:'short'})}</span>
+                        <span class="text-[10px] font-black text-blue-600 mt-1">${log.timestamp}</span>
+                        <span class="text-[10px] font-bold text-slate-700">${log.count} รายการ</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function restoreHistory(idx) {
+            const data = auditLog[idx].raw;
+            document.getElementById('rawInput').value = data;
+            saveDraft();
+            showToast("🔄 ดึงข้อมูลจากประวัติกลับมาแล้ว");
+        }
+
+        function deleteSingleHistory(e, idx) {
+            e.stopPropagation(); // กันไม่ให้ไปเรียก restoreHistory
+            auditLog.splice(idx, 1);
+            localStorage.setItem('mflow_audit_history', JSON.stringify(auditLog));
+            renderHistoryLog();
+            showToast("🗑️ ลบรายการประวัติแล้ว");
+        }
 
         function getDayOfWeek(dateStr) {
             let d = dateStr.split('/');
@@ -210,6 +330,8 @@
         function processData() {
             const inputEl = document.getElementById('rawInput');
             let input = inputEl.value.trim().replace(/"/g, '');
+            if (!input) return;
+
             const delimiter = "||TRIP||";
             const chunks = input.replace(/M2026/g, delimiter + "M2026").split(delimiter).filter(c => c.trim());
 
@@ -233,16 +355,38 @@
             });
 
             if (newEntries.length > 0) {
+                // บันทึกลง Audit Log
+                const now = new Date();
+                const timeLabel = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+                
+                const logEntry = {
+                    timestamp: timeLabel,
+                    created_at: now.toISOString(), // ใช้สำหรับตรวจสอบอายุ 7 วัน
+                    count: newEntries.length,
+                    raw: inputEl.value
+                };
+
+                // เพิ่มเข้าประวัติ (ไม่จำกัดจำนวน ตราบที่ยังไม่เกิน 7 วัน)
+                auditLog = [logEntry, ...auditLog];
+                
+                // ตรวจสอบ Auto-Retention ทันที
+                cleanOldHistory();
+
+                // ประมวลผลข้อมูลลง Dashboard
                 rawDataStore = [...rawDataStore, ...newEntries];
                 document.getElementById('emptyState').classList.add('hidden');
                 document.getElementById('dashboardSection').classList.remove('hidden');
                 document.getElementById('statusDot').className = 'relative inline-flex rounded-full h-2 w-2 bg-blue-500';
+                
                 refreshUI();
-                showToast(`✅ เพิ่มข้อมูล ${newEntries.length} รายการสำเร็จ`);
+                showToast(`✅ วิเคราะห์ ${newEntries.length} รายการ และบันทึกประวัติแล้ว`);
+                
+                // ล้างช่องกรอก
+                inputEl.value = '';
+                localStorage.removeItem('mflow_trip_draft');
             } else {
                 showToast(`❌ ไม่พบข้อมูล TRIP ในรูปแบบที่ถูกต้อง`);
             }
-            inputEl.value = '';
         }
 
         function toggleAggMode(mode) {
@@ -264,24 +408,15 @@
             refreshUI();
         }
 
-        function resetToAll() {
-            selectionType = 'all';
-            selectedWeekdayIdx = null;
-            selectedDateValue = null;
-            refreshUI();
-        }
-
         function refreshUI() {
             updateTabs();
             updateAnalysis();
         }
 
         function updateTabs() {
-            // Aggregation Buttons
             document.getElementById('overviewBtn').className = `nav-tab ${aggMode === 'avg' && selectionType !== 'date' ? 'nav-tab-active' : 'nav-tab-inactive'}`;
             document.getElementById('totalBtn').className = `nav-tab ${aggMode === 'total' && selectionType !== 'date' ? 'nav-tab-active' : 'nav-tab-inactive'}`;
 
-            // Weekday Tabs
             const weekdayContainer = document.getElementById('dayOfWeekTabs');
             const uniqueDays = [...new Set(rawDataStore.map(d => d.dayIdx))].sort((a,b) => a - b);
             weekdayContainer.innerHTML = uniqueDays.map(idx => {
@@ -289,7 +424,6 @@
                 return `<button onclick="selectWeekday(${idx})" class="nav-tab whitespace-nowrap ${isActive ? 'nav-tab-active' : 'nav-tab-inactive'}">วัน${dayNames[idx]}</button>`;
             }).join('');
 
-            // Date Tabs
             const dateContainer = document.getElementById('dateTabs');
             const uniqueDates = [...new Set(rawDataStore.map(d => d.date))].sort();
             dateContainer.innerHTML = uniqueDates.map(d => {
@@ -305,7 +439,6 @@
             let dataForChart = [];
             let countLabel = "Trips";
             
-            // 1. Filter by selection
             if (selectionType === 'weekday') {
                 filteredData = rawDataStore.filter(d => d.dayIdx === selectedWeekdayIdx);
                 const dayCount = new Set(filteredData.map(d => d.date)).size;
@@ -313,16 +446,16 @@
                 if (aggMode === 'avg') {
                     const counts = {};
                     filteredData.forEach(d => counts[d.hour] = (counts[d.hour] || 0) + 1);
-                    dataForChart = Object.entries(counts).map(([h, c]) => ({ hour: h, count: Math.round(c / dayCount) }));
+                    dataForChart = Object.entries(counts).map(([h, c]) => ({ hour: h, count: Math.round(c / (dayCount || 1)) }));
                     displayTitle = `ภาพรวมเฉลี่ย (เฉพาะวัน${dayNames[selectedWeekdayIdx]})`;
-                    displaySub = `เฉลี่ยจากวัน${dayNames[selectedWeekdayIdx]}ทั้งหมด ${dayCount} วันที่บันทึกไว้`;
+                    displaySub = `เฉลี่ยจากวัน${dayNames[selectedWeekdayIdx]} ทั้งหมด ${dayCount} วัน`;
                     countLabel = "Avg";
                 } else {
                     const counts = {};
                     filteredData.forEach(d => counts[d.hour] = (counts[d.hour] || 0) + 1);
                     dataForChart = Object.entries(counts).map(([h, c]) => ({ hour: h, count: c }));
                     displayTitle = `ยอดรวมสะสม (เฉพาะวัน${dayNames[selectedWeekdayIdx]})`;
-                    displaySub = `รวมยอด TRIP ของวัน${dayNames[selectedWeekdayIdx]} ทั้งหมด ${dayCount} วัน`;
+                    displaySub = `รวมยอดของวัน${dayNames[selectedWeekdayIdx]} ทั้งหมด ${dayCount} วัน`;
                     countLabel = "Total";
                 }
             } 
@@ -332,24 +465,24 @@
                 filteredData.forEach(d => counts[d.hour] = (counts[d.hour] || 0) + 1);
                 dataForChart = Object.entries(counts).map(([h, c]) => ({ hour: h, count: c }));
                 displayTitle = `รายงานประจำวันที่ ${selectedDateValue}`;
-                displaySub = `วัน${dayNames[getDayOfWeek(selectedDateValue)]} - ข้อมูลรายวันแบบระบุวันที่`;
+                displaySub = `วัน${dayNames[getDayOfWeek(selectedDateValue)]} - รายวัน`;
                 countLabel = "Trips";
             }
-            else { // all
-                const dayCount = new Set(rawDataStore.map(d => d.date)).size;
+            else { 
+                const dayCount = new Set(rawDataStore.map(d => d.date)).size || 1;
                 if (aggMode === 'avg') {
                     const counts = {};
                     rawDataStore.forEach(d => counts[d.hour] = (counts[d.hour] || 0) + 1);
                     dataForChart = Object.entries(counts).map(([h, c]) => ({ hour: h, count: Math.round(c / dayCount) }));
-                    displayTitle = "ภาพรวมเฉลี่ย (ทุกวันที่บันทึก)";
-                    displaySub = `คำนวณเฉลี่ยจากข้อมูลทั้งหมด ${dayCount} วัน`;
+                    displayTitle = "ภาพรวมเฉลี่ย (ทุกวัน)";
+                    displaySub = `เฉลี่ยจากข้อมูลทั้งหมด ${dayCount} วัน`;
                     countLabel = "Avg";
                 } else {
                     const counts = {};
                     rawDataStore.forEach(d => counts[d.hour] = (counts[d.hour] || 0) + 1);
                     dataForChart = Object.entries(counts).map(([h, c]) => ({ hour: h, count: c }));
-                    displayTitle = "ยอดรวมสะสม (ทุกวันที่บันทึก)";
-                    displaySub = `ยอด TRIP สะสมสุทธิจาก ${dayCount} วัน`;
+                    displayTitle = "ยอดรวมสะสม (ทุกวัน)";
+                    displaySub = `ยอดสะสมจากทั้งหมด ${dayCount} วัน`;
                     countLabel = "Total";
                 }
             }
@@ -469,11 +602,21 @@
             });
         }
 
-        function clearData() {
+        function clearCurrentAnalysis() {
             rawDataStore = [];
+            document.getElementById('rawInput').value = '';
+            localStorage.removeItem('mflow_trip_draft');
             document.getElementById('dashboardSection').classList.add('hidden');
             document.getElementById('emptyState').classList.remove('hidden');
-            showToast("🧹 ล้างข้อมูลเรียบร้อยแล้ว");
+            document.getElementById('statusDot').className = 'relative inline-flex rounded-full h-2 w-2 bg-slate-400';
+            showToast("🧹 ล้างข้อมูลปัจจุบันแล้ว (ประวัติยังคงอยู่)");
+        }
+
+        function clearHistoryAll() {
+            auditLog = [];
+            localStorage.removeItem('mflow_audit_history');
+            renderHistoryLog();
+            showToast("🗑️ ล้างประวัติการวางข้อมูลทั้งหมดแล้ว");
         }
 
         function showToast(msg) {
