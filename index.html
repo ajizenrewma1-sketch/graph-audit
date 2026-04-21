@@ -3,237 +3,248 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Audit M-Flow - Day of Week Intelligent Analytics with Log</title>
+    <title>ระบบวิเคราะห์ Audit M-Flow</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Inter:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-main: #f8fafc;
-            --accent: #2563eb; 
-            --surface: #ffffff;
+            --gear5-white: #ffffff;
+            --gear5-purple: #9d7dfa;
+            --gear5-gold: #ffd700;
+            --bg-main: #f5f3ff;
         }
+        
         body {
             font-family: 'Sarabun', sans-serif;
             background-color: var(--bg-main);
-            color: #334155;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(157, 125, 250, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(255, 215, 0, 0.1) 0px, transparent 50%);
+            color: #1e293b;
             min-height: 100vh;
         }
+
         .header-font { font-family: 'Chakra Petch', sans-serif; }
         .inter-font { font-family: 'Inter', sans-serif; }
-        
-        .main-container {
-            max-width: 1300px;
-            margin: 0 auto;
+
+        .gear5-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border: 2px solid #ffffff;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 25px -5px rgba(157, 125, 250, 0.1);
+            transition: all 0.3s ease;
         }
 
-        .glass-card {
-            background: var(--surface);
-            border: 1px solid rgba(226, 232, 240, 0.8);
-            border-radius: 1.25rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.02), 0 4px 6px -1px rgba(0,0,0,0.05);
-        }
-
-        .audit-logo-text {
-            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%);
+        .sun-god-text {
+            background: linear-gradient(135deg, #6366f1 0%, #9d7dfa 50%, #ffd700 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            text-shadow: 0px 4px 12px rgba(59, 130, 246, 0.15);
-            display: inline-block;
+            font-weight: 800;
         }
 
         .nav-tab {
             padding: 0.625rem 1.25rem;
-            border-radius: 0.75rem;
-            font-weight: 600;
+            border-radius: 9999px;
+            font-weight: 700;
             font-size: 0.8125rem;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid transparent;
         }
         .nav-tab-active {
-            background-color: var(--accent);
+            background-color: var(--gear5-purple);
             color: white;
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+            box-shadow: 0 4px 15px rgba(157, 125, 250, 0.4);
+            border-color: white;
         }
         .nav-tab-inactive {
-            background-color: transparent;
+            background-color: white;
             color: #64748b;
+            border-color: #e2e8f0;
         }
-        .nav-tab-inactive:hover {
-            background-color: #e2e8f0;
-            color: #1e293b;
-        }
-
-        .chart-container { position: relative; height: 420px; width: 100%; }
 
         .rank-item {
-            border-radius: 0.85rem;
-            padding: 0.85rem 1rem;
-            border: 1px solid #f1f5f9;
-            background: #fff;
-            transition: all 0.3s ease;
+            border-radius: 1.25rem;
+            padding: 1rem;
+            background: white;
+            border: 2px solid #f1f5f9;
         }
-        .rank-gold { border-left: 4px solid #1e40af; background: linear-gradient(to right, #eff6ff, #ffffff); }
-        .rank-silver { border-left: 4px solid #10b981; background: linear-gradient(to right, #f0fdf4, #ffffff); }
-        .rank-bronze { border-left: 4px solid #f59e0b; background: linear-gradient(to right, #fffbeb, #ffffff); }
+        .rank-gold { 
+            border-color: var(--gear5-gold); 
+            background: linear-gradient(135deg, #fffbeb 0%, #ffffff 100%);
+        }
+        
+        .cloud-float {
+            animation: floating 3s ease-in-out infinite;
+        }
+        @keyframes floating {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
 
-        .custom-scroll::-webkit-scrollbar { width: 4px; }
-        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-
-        @keyframes softSlideUp {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-soft { animation: softSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-
-        .history-pill {
-            transition: all 0.2s ease;
-            position: relative;
-        }
-        .history-pill:hover {
-            background-color: #f8fafc;
-            border-color: #cbd5e1;
-        }
-        .delete-history-btn {
-            position: absolute;
-            top: -6px;
-            right: -6px;
-            background: #ef4444;
+        .btn-primary {
+            background: linear-gradient(135deg, #9d7dfa 0%, #6366f1 100%);
             color: white;
-            border-radius: 999px;
-            width: 16px;
-            height: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-            z-index: 10;
+            transition: all 0.3s;
         }
-        .history-pill:hover .delete-history-btn {
-            opacity: 1;
+
+        #statusDot.active {
+            background-color: var(--gear5-gold);
+            box-shadow: 0 0 10px var(--gear5-gold);
         }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        /* Hide scrollbar for IE, Edge and Firefox */
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
     </style>
 </head>
 <body class="py-6 px-4 sm:px-6 lg:py-10">
-    <div class="main-container space-y-6">
+    <div class="max-w-7xl mx-auto space-y-8">
         
-        <!-- Navbar -->
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-            <div class="flex items-center gap-3">
-                <div class="p-2.5 bg-blue-600 rounded-xl shadow-lg shadow-blue-200">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    </svg>
+        <!-- ส่วนหัวข้อ -->
+        <div class="flex flex-col sm:flex-row justify-between items-center gap-6 mb-10">
+            <div class="flex items-center gap-5">
+                <div class="cloud-float p-1 bg-white rounded-full border-4 border-purple-200 shadow-xl">
+                    <div class="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center overflow-hidden">
+                        <svg viewBox="0 0 24 24" class="w-10 h-10 text-white fill-current">
+                            <path d="M12,2C13.5,2 14.8,2.8 15.5,4.1C16.4,3.4 17.5,3 18.7,3C21.1,3 23,4.9 23,7.3C23,8.7 22.3,10 21.3,10.8C22.3,11.6 23,12.8 23,14.2C23,16.6 21.1,18.5 18.7,18.5C18.2,18.5 17.7,18.4 17.2,18.2C16.5,20.4 14.4,22 12,22C9.6,22 7.5,20.4 6.8,18.2C6.3,18.4 5.8,18.5 5.3,18.5C2.9,18.5 1,16.6 1,14.2C1,12.8 1.7,11.6 2.7,10.8C1.7,10 1,8.7 1,7.3C1,4.9 2.9,3 5.3,3C6.5,3 7.6,3.4 8.5,4.1C9.2,2.8 10.5,2 12,2Z"/>
+                        </svg>
+                    </div>
                 </div>
                 <div>
-                    <h1 class="text-2xl font-bold header-font leading-tight">
-                        <span class="audit-logo-text">Audit M-Flow</span>
+                    <h1 class="text-4xl font-black header-font leading-none tracking-tighter">
+                        <span class="sun-god-text italic uppercase">AUDIT M-Flow</span>
                     </h1>
-                    <p class="text-xs font-medium text-slate-400 tracking-wide uppercase">Multi-Day Smart Analysis</p>
+                    <p class="text-xs font-bold text-purple-400 tracking-[0.2em] uppercase mt-1">ระบบวิเคราะห์งานรายชั่วโมง</p>
                 </div>
             </div>
             <div class="flex items-center gap-4">
-                <div id="statusIndicator" class="flex items-center gap-2 px-3 py-1.5 bg-white rounded-full border border-slate-200 shadow-sm">
-                    <span id="statusDot" class="relative inline-flex rounded-full h-2 w-2 bg-slate-400"></span>
-                    <span id="statusText" class="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Ready</span>
+                <div class="px-4 py-2 bg-white rounded-full border-2 border-purple-100 shadow-sm flex items-center gap-3">
+                    <span id="statusDot" class="h-3 w-3 rounded-full bg-slate-300"></span>
+                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">สถานะระบบพร้อมใช้งาน</span>
                 </div>
-                <button onclick="clearCurrentAnalysis()" class="p-2 text-slate-400 hover:text-red-500 transition-colors" title="ล้างข้อมูลการวิเคราะห์ปัจจุบัน (เก็บประวัติไว้)">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <button onclick="clearCurrentAnalysis()" title="ล้างข้อมูลปัจจุบัน" class="p-3 bg-white text-slate-300 hover:text-red-500 rounded-2xl border-2 border-slate-50 transition-all hover:border-red-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
                 </button>
             </div>
         </div>
 
-        <!-- Input Section -->
-        <div class="space-y-3">
-            <div class="glass-card p-2 sm:p-3">
-                <div class="flex flex-col md:flex-row gap-3">
-                    <div class="flex-grow">
-                        <textarea id="rawInput" rows="1" oninput="saveDraft()" placeholder="วางข้อมูล TRIP (M2026... หรือ A2026...) เพื่อเริ่มวิเคราะห์..." class="w-full bg-transparent border-none py-3 px-4 text-sm font-medium text-slate-700 focus:outline-none resize-none min-h-[48px]"></textarea>
-                    </div>
-                    <button onclick="processData()" class="h-[48px] px-8 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm shadow-md transition-all active:scale-95">เริ่มตรวจสอบ</button>
+        <!-- พื้นที่นำเข้าข้อมูล -->
+        <div class="gear5-card p-4 sm:p-6 border-b-4 border-purple-400">
+            <div class="flex flex-col md:flex-row gap-4">
+                <div class="flex-grow bg-slate-50 rounded-2xl p-2 focus-within:ring-4 ring-purple-100 transition-all">
+                    <textarea id="rawInput" rows="1" oninput="saveDraft()" placeholder="วางข้อมูล TRIP จากระบบ (จะลบเครื่องหมายคำพูดให้อัตโนมัติ)..." class="w-full bg-transparent border-none py-3 px-4 text-sm font-bold text-slate-700 focus:outline-none resize-none min-h-[50px]"></textarea>
                 </div>
+                <button onclick="processData()" class="btn-primary px-10 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg active:scale-95">วิเคราะห์ข้อมูล</button>
             </div>
-
-            <!-- Audit History Log -->
-            <div id="historyContainer" class="hidden animate-soft">
-                <div class="flex items-center justify-between px-2 mb-2">
-                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ประวัติการตรวจสอบ (เก็บย้อนหลัง 7 วัน):</span>
-                    <button onclick="clearHistoryAll()" class="text-[9px] font-bold text-slate-400 hover:text-red-500 uppercase">ล้างประวัติทั้งหมด</button>
-                </div>
-                <div id="historyLog" class="flex gap-3 overflow-x-auto no-scrollbar pb-2 pt-1 px-1">
-                    <!-- History Pills will be injected here -->
-                </div>
+            
+            <div id="historyContainer" class="hidden mt-6 pt-6 border-t-2 border-dashed border-slate-100">
+                <p class="text-[10px] font-black text-purple-300 uppercase tracking-widest mb-3">บันทึกที่วิเคราะห์ล่าสุด:</p>
+                <div id="historyLog" class="flex gap-3 overflow-x-auto no-scrollbar pb-2"></div>
             </div>
         </div>
 
-        <!-- Dashboard -->
-        <div id="dashboardSection" class="hidden space-y-6">
-            <div id="miniStats" class="grid grid-cols-2 md:grid-cols-4 gap-4 animate-soft"></div>
+        <!-- ส่วนแสดงผล Dashboard -->
+        <div id="dashboardSection" class="hidden space-y-8">
+            <div id="miniStats" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
 
-            <!-- Enhanced Tabs -->
+            <!-- การควบคุมและตัวกรอง -->
             <div class="space-y-4">
-                <!-- Data Aggregation Mode -->
-                <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-2">โหมดการดู:</span>
-                    <button id="overviewBtn" onclick="toggleAggMode('avg')" class="nav-tab whitespace-nowrap">
-                        ภาพรวมเฉลี่ย
-                    </button>
-                    <button id="totalBtn" onclick="toggleAggMode('total')" class="nav-tab whitespace-nowrap">
-                        ยอดรวมสะสม
-                    </button>
-                    <div id="dayOfWeekTabs" class="flex gap-2 border-l border-slate-200 pl-2"></div>
+                <div class="flex items-center gap-3 overflow-x-auto no-scrollbar py-2">
+                    <div class="flex gap-2 p-1.5 bg-white rounded-full shadow-inner border border-slate-100">
+                        <button id="overviewBtn" onclick="toggleAggMode('avg')" class="nav-tab whitespace-nowrap">ค่าเฉลี่ยรายวัน</button>
+                        <button id="totalBtn" onclick="toggleAggMode('total')" class="nav-tab whitespace-nowrap">ยอดรวมทั้งหมด</button>
+                    </div>
+                    <div id="dayOfWeekTabs" class="flex gap-2"></div>
                 </div>
-
-                <!-- Specific Date Selection -->
-                <div id="dateTabRow" class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-2">รายวัน (ระบุวันที่):</span>
-                    <div id="dateTabs" class="flex gap-2"></div>
-                </div>
+                <div id="dateTabs" class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1"></div>
             </div>
 
-            <div id="dashboardContent" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-                <!-- กราฟ -->
-                <div id="chartCard" class="lg:col-span-7 glass-card p-6 md:p-8 flex flex-col">
-                    <div class="flex justify-between items-start mb-6">
+            <!-- กราฟและลำดับ -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <!-- พื้นที่กราฟ -->
+                <div class="lg:col-span-8 gear5-card p-6 md:p-10">
+                    <div class="flex justify-between items-start mb-10">
                         <div>
-                            <div class="flex items-baseline gap-2">
-                                <h2 id="chartTitle" class="text-lg font-bold text-slate-800 header-font">รายงานความหนาแน่น</h2>
-                                <span id="chartValueTag" class="text-sm font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg inter-font">0</span>
+                            <div class="flex items-center gap-3">
+                                <h2 id="chartTitle" class="text-2xl font-black text-indigo-950 header-font">รายงานความหนาแน่น</h2>
+                                <span id="chartValueTag" class="text-lg font-black bg-yellow-400 text-indigo-900 px-4 py-1 rounded-full shadow-sm inter-font">0</span>
                             </div>
-                            <p id="chartSub" class="text-xs text-slate-400 font-medium">แสดงปริมาณงานช่วงเวลา 08:00 - 17:00</p>
+                            <p id="chartSub" class="text-sm text-slate-400 font-bold mt-1 uppercase tracking-tight">ข้อมูลสรุปตามช่วงเวลา</p>
                         </div>
                     </div>
-                    <div class="chart-container flex-grow">
+                    <div class="h-[400px] w-full">
                         <canvas id="peakChart"></canvas>
                     </div>
                 </div>
 
-                <!-- ลำดับ -->
-                <div class="lg:col-span-5 flex flex-col h-full">
-                    <div class="flex items-center justify-between px-2 mb-3">
-                        <h3 id="rankTitle" class="text-xs font-extrabold text-slate-400 uppercase tracking-widest">ลำดับปริมาณงาน</h3>
-                        <span id="rankCount" class="text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">-</span>
+                <!-- รายการลำดับงาน -->
+                <div class="lg:col-span-4 flex flex-col space-y-4">
+                    <div class="flex items-center justify-between px-2">
+                        <h3 class="text-sm font-black text-indigo-950 uppercase tracking-widest">ลำดับปริมาณงาน</h3>
+                        <span id="rankCount" class="text-xs font-bold text-purple-600 bg-purple-50 px-3 py-1 rounded-full">0 ช่วงเวลา</span>
                     </div>
-                    <div id="rankSection" class="flex-grow space-y-2 overflow-y-auto custom-scroll pr-1.5" style="max-height: 500px;"></div>
+                    <div id="rankSection" class="flex-grow space-y-3 overflow-y-auto max-h-[500px] pr-2"></div>
                 </div>
             </div>
         </div>
 
-        <!-- Empty State -->
-        <div id="emptyState" class="py-40 text-center glass-card border-dashed border-2 bg-slate-50/40">
-            <h3 class="text-slate-500 font-bold text-lg">โปรดนำเข้าข้อมูล TRIP</h3>
-            <p class="text-slate-400 text-sm">ระบบจะตรวจจับ M2026/A2026 และประมวลผลให้อัตโนมัติ</p>
+        <!-- หน้าว่าง -->
+        <div id="emptyState" class="py-32 text-center gear5-card border-dashed bg-white/50 border-4 border-slate-200">
+            <div class="cloud-float mb-6">
+                <div class="w-24 h-24 bg-slate-100 rounded-full mx-auto flex items-center justify-center border-4 border-white shadow-lg text-slate-300">
+                    <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                </div>
+            </div>
+            <h3 class="text-indigo-950 font-black text-xl uppercase tracking-tighter">กรุณาใส่ข้อมูล TRIP</h3>
+            <p class="text-slate-400 text-sm font-bold mt-2">วางข้อมูลเพื่อเริ่มต้นการวิเคราะห์สถิติตามช่วงเวลา</p>
         </div>
     </div>
 
-    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 px-6 py-3 bg-slate-900 text-white text-xs font-bold rounded-2xl shadow-2xl opacity-0 transition-all pointer-events-none z-50"></div>
+    <!-- หน้าต่างรายละเอียด (Modal) -->
+    <div id="breakdownModal" class="fixed inset-0 bg-indigo-950/40 backdrop-blur-md hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-[2rem] w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col shadow-2xl">
+            <div class="p-8 border-b flex justify-between items-center bg-indigo-50/30">
+                <div>
+                    <h2 id="modalTitle" class="text-2xl font-black text-indigo-950 header-font">รายละเอียดรายการ</h2>
+                    <p id="modalSub" class="text-xs text-purple-500 font-black uppercase tracking-widest mt-1"></p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="copyTableToClipboard()" class="btn-primary px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest">คัดลอกตาราง</button>
+                    <button onclick="closeModal()" class="p-2 text-slate-400 hover:bg-slate-100 rounded-full">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="flex-grow overflow-auto p-6">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b-2">
+                            <th class="pb-4 px-4">เลข Trip ID</th>
+                            <th class="pb-4 px-4">วันที่ผ่านทาง</th>
+                            <th class="pb-4 px-4">วันในสัปดาห์</th>
+                            <th class="pb-4 px-4">เวลาผ่านทาง</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modalTableBody" class="divide-y divide-slate-50"></tbody>
+                </table>
+            </div>
+            <div id="modalTotalLabel" class="p-4 bg-indigo-900 text-center text-xs font-black text-indigo-200 uppercase tracking-[0.3em]"></div>
+        </div>
+    </div>
+
+    <!-- การแจ้งเตือน (Toast) -->
+    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 px-8 py-4 bg-indigo-950 text-white text-xs font-black rounded-full shadow-2xl opacity-0 transition-all z-50 uppercase tracking-widest pointer-events-none"></div>
 
     <script>
         Chart.register(ChartDataLabels);
@@ -245,110 +256,49 @@
         let selectedWeekdayIdx = null;
         let selectedDateValue = null;
         let chartInstance = null;
+        let currentModalData = [];
 
         const dayNames = ["อาทิตย์", "จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์", "เสาร์"];
 
         window.onload = function() {
-            const savedDraft = localStorage.getItem('mflow_trip_draft');
-            if (savedDraft) {
-                document.getElementById('rawInput').value = savedDraft;
-            }
-
-            const savedLog = localStorage.getItem('mflow_audit_history');
-            if (savedLog) {
-                auditLog = JSON.parse(savedLog);
-                cleanOldHistory();
-            }
+            const savedDraft = localStorage.getItem('mflow_trip_draft_g5');
+            if (savedDraft) document.getElementById('rawInput').value = savedDraft;
+            const savedLog = localStorage.getItem('mflow_audit_history_g5');
+            if (savedLog) { auditLog = JSON.parse(savedLog); renderHistoryLog(); }
         };
 
         function saveDraft() {
-            const inputVal = document.getElementById('rawInput').value;
-            localStorage.setItem('mflow_trip_draft', inputVal);
-        }
-
-        function cleanOldHistory() {
-            const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
-            const now = new Date().getTime();
-            
-            const originalLength = auditLog.length;
-            auditLog = auditLog.filter(log => {
-                const logTime = new Date(log.created_at).getTime();
-                return (now - logTime) < SEVEN_DAYS_MS;
-            });
-
-            if (originalLength !== auditLog.length) {
-                localStorage.setItem('mflow_audit_history', JSON.stringify(auditLog));
-            }
-            renderHistoryLog();
-        }
-
-        function renderHistoryLog() {
-            const container = document.getElementById('historyContainer');
-            const logEl = document.getElementById('historyLog');
-            
-            if (auditLog.length === 0) {
-                container.classList.add('hidden');
-                return;
-            }
-
-            container.classList.remove('hidden');
-            logEl.innerHTML = auditLog.map((log, idx) => `
-                <div class="history-pill shrink-0 flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg shadow-sm cursor-pointer" onclick="restoreHistory(${idx})">
-                    <button class="delete-history-btn" onclick="deleteSingleHistory(event, ${idx})">✕</button>
-                    <div class="flex flex-col">
-                        <span class="text-[8px] font-black text-slate-400 leading-none uppercase">${new Date(log.created_at).toLocaleDateString('th-TH', {day:'numeric', month:'short'})}</span>
-                        <span class="text-[10px] font-black text-blue-600 mt-1">${log.timestamp}</span>
-                        <span class="text-[10px] font-bold text-slate-700">${log.count} รายการ</span>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function restoreHistory(idx) {
-            const data = auditLog[idx].raw;
-            document.getElementById('rawInput').value = data;
-            saveDraft();
-            showToast("🔄 ดึงข้อมูลจากประวัติกลับมาแล้ว");
-        }
-
-        function deleteSingleHistory(e, idx) {
-            e.stopPropagation(); 
-            auditLog.splice(idx, 1);
-            localStorage.setItem('mflow_audit_history', JSON.stringify(auditLog));
-            renderHistoryLog();
-            showToast("🗑️ ลบรายการประวัติแล้ว");
+            localStorage.setItem('mflow_trip_draft_g5', document.getElementById('rawInput').value);
         }
 
         function getDayOfWeek(dateStr) {
             let d = dateStr.split('/');
-            let year = parseInt(d[2]);
-            if (year > 2400) year -= 543;
+            let year = parseInt(d[2]); if (year > 2400) year -= 543;
             return new Date(year, parseInt(d[1]) - 1, parseInt(d[0])).getDay();
         }
 
         function processData() {
             const inputEl = document.getElementById('rawInput');
-            let input = inputEl.value.trim().replace(/"/g, '');
+            let input = inputEl.value.trim();
             if (!input) return;
 
-            // Updated Logic: Split by both M2026 and A2026
-            const delimiter = "||NEW_TRIP||";
-            // เราใช้ Regex ที่ครอบคลุมทั้ง M2026 และ A2026 ในการแบ่งชุดข้อมูล
-            const processedInput = input.replace(/(M2026|A2026)/g, delimiter + "$1");
+            const sanitizedInput = input.replace(/"/g, "");
+            const delimiter = "||TRIP||";
+            const processedInput = sanitizedInput.replace(/(M20\d{2}|A20\d{2})/g, delimiter + "$1");
             const chunks = processedInput.split(delimiter).filter(c => c.trim());
 
             const newEntries = [];
             chunks.forEach(chunk => {
                 const parts = chunk.split(/\s+/).filter(p => p.trim());
                 if (parts.length >= 5) {
+                    const id = parts[0];
                     const dateStr = parts[3];
                     const timeStr = parts[4];
                     if (timeStr && timeStr.includes(':')) {
                         const h = parseInt(timeStr.split(':')[0]);
-                        // กรองเฉพาะเวลา 08:00 - 17:00 ตามความต้องการเดิม
                         if (h >= 8 && h <= 17) {
                             newEntries.push({ 
-                                date: dateStr, 
+                                id: id, date: dateStr, time: timeStr,
                                 hour: h.toString().padStart(2, '0') + ":00",
                                 dayIdx: getDayOfWeek(dateStr)
                             });
@@ -359,55 +309,68 @@
 
             if (newEntries.length > 0) {
                 const now = new Date();
-                const timeLabel = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
-                
-                const logEntry = {
-                    timestamp: timeLabel,
-                    created_at: now.toISOString(),
+                auditLog = [{
+                    id: Date.now(), // Unique ID for deletion logic
+                    timestamp: now.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'}),
                     count: newEntries.length,
-                    raw: inputEl.value
-                };
-
-                auditLog = [logEntry, ...auditLog];
-                cleanOldHistory();
-
+                    raw: sanitizedInput
+                }, ...auditLog.slice(0, 9)]; // Keep up to 10 items
+                
+                localStorage.setItem('mflow_audit_history_g5', JSON.stringify(auditLog));
+                renderHistoryLog();
+                
                 rawDataStore = [...rawDataStore, ...newEntries];
                 document.getElementById('emptyState').classList.add('hidden');
                 document.getElementById('dashboardSection').classList.remove('hidden');
-                document.getElementById('statusDot').className = 'relative inline-flex rounded-full h-2 w-2 bg-blue-500';
-                
+                document.getElementById('statusDot').classList.add('active');
                 refreshUI();
-                showToast(`✅ วิเคราะห์ ${newEntries.length} รายการ (M/A 2026)`);
-                
-                inputEl.value = '';
-                localStorage.removeItem('mflow_trip_draft');
+                showToast(`วิเคราะห์แล้ว ${newEntries.length} รายการ!`);
+                inputEl.value = ''; localStorage.removeItem('mflow_trip_draft_g5');
             } else {
-                showToast(`❌ ไม่พบข้อมูล M2026 หรือ A2026 ที่ถูกต้อง`);
+                showToast("ไม่พบข้อมูลที่ถูกต้อง!");
             }
         }
 
-        function toggleAggMode(mode) {
-            aggMode = mode;
-            if (selectionType === 'date') {
-                selectionType = 'all';
-                selectedDateValue = null;
-            }
-            refreshUI();
+        function renderHistoryLog() {
+            const container = document.getElementById('historyContainer');
+            const logEl = document.getElementById('historyLog');
+            if (auditLog.length === 0) { container.classList.add('hidden'); return; }
+            container.classList.remove('hidden');
+            logEl.innerHTML = auditLog.map((log, idx) => `
+                <div class="shrink-0 relative group">
+                    <div class="bg-white border-2 border-purple-100 rounded-2xl p-3 shadow-sm hover:border-purple-300 transition-all cursor-pointer" onclick="restoreHistory(${idx})">
+                        <div class="flex items-center gap-3 pr-4">
+                            <div class="w-8 h-8 bg-purple-50 rounded-full flex items-center justify-center text-purple-500 font-black text-[10px]">LOG</div>
+                            <div>
+                                <p class="text-[9px] font-black text-slate-400 uppercase leading-none">${log.timestamp}</p>
+                                <p class="text-[11px] font-black text-indigo-900 mt-0.5">${log.count} รายการ</p>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="removeHistoryItem(event, ${idx})" class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center shadow-md hover:scale-110 active:scale-95 transition-transform">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+            `).join('');
         }
 
-        function selectWeekday(idx) {
-            selectionType = 'weekday';
-            selectedWeekdayIdx = idx;
-            selectedDateValue = null;
-            refreshUI();
+        function removeHistoryItem(event, index) {
+            event.stopPropagation(); // Prevent trigger restoreHistory
+            auditLog.splice(index, 1);
+            localStorage.setItem('mflow_audit_history_g5', JSON.stringify(auditLog));
+            renderHistoryLog();
+            showToast("ลบบันทึกแล้ว");
         }
 
-        function selectDate(date) {
-            selectionType = 'date';
-            selectedDateValue = date;
-            selectedWeekdayIdx = null;
-            refreshUI();
+        function restoreHistory(idx) {
+            document.getElementById('rawInput').value = auditLog[idx].raw;
+            saveDraft();
+            showToast("กู้คืนข้อมูลลงในช่องกรอกแล้ว!");
         }
+
+        function toggleAggMode(mode) { aggMode = mode; selectionType = 'all'; refreshUI(); }
+        function selectWeekday(idx) { selectionType = 'weekday'; selectedWeekdayIdx = idx; refreshUI(); }
+        function selectDate(date) { selectionType = 'date'; selectedDateValue = date; refreshUI(); }
 
         function refreshUI() {
             updateTabs();
@@ -415,225 +378,169 @@
         }
 
         function updateTabs() {
-            document.getElementById('overviewBtn').className = `nav-tab ${aggMode === 'avg' && selectionType !== 'date' ? 'nav-tab-active' : 'nav-tab-inactive'}`;
-            document.getElementById('totalBtn').className = `nav-tab ${aggMode === 'total' && selectionType !== 'date' ? 'nav-tab-active' : 'nav-tab-inactive'}`;
-
-            const weekdayContainer = document.getElementById('dayOfWeekTabs');
-            const uniqueDays = [...new Set(rawDataStore.map(d => d.dayIdx))].sort((a,b) => a - b);
-            weekdayContainer.innerHTML = uniqueDays.map(idx => {
-                const isActive = (selectionType === 'weekday' && selectedWeekdayIdx === idx);
-                return `<button onclick="selectWeekday(${idx})" class="nav-tab whitespace-nowrap ${isActive ? 'nav-tab-active' : 'nav-tab-inactive'}">วัน${dayNames[idx]}</button>`;
-            }).join('');
-
-            const dateContainer = document.getElementById('dateTabs');
+            document.getElementById('overviewBtn').className = `nav-tab ${aggMode === 'avg' && selectionType === 'all' ? 'nav-tab-active' : 'nav-tab-inactive'}`;
+            document.getElementById('totalBtn').className = `nav-tab ${aggMode === 'total' && selectionType === 'all' ? 'nav-tab-active' : 'nav-tab-inactive'}`;
+            
+            const uniqueDays = [...new Set(rawDataStore.map(d => d.dayIdx))].sort();
+            document.getElementById('dayOfWeekTabs').innerHTML = uniqueDays.map(idx => `<button onclick="selectWeekday(${idx})" class="nav-tab whitespace-nowrap ${selectionType === 'weekday' && selectedWeekdayIdx === idx ? 'nav-tab-active' : 'nav-tab-inactive'}">วัน${dayNames[idx]}</button>`).join('');
+            
             const uniqueDates = [...new Set(rawDataStore.map(d => d.date))].sort();
-            dateContainer.innerHTML = uniqueDates.map(d => {
-                const isActive = (selectionType === 'date' && selectedDateValue === d);
-                return `<button onclick="selectDate('${d}')" class="nav-tab whitespace-nowrap text-[11px] ${isActive ? 'nav-tab-active' : 'nav-tab-inactive'}">${d}</button>`;
-            }).join('');
+            document.getElementById('dateTabs').innerHTML = uniqueDates.map(d => `<button onclick="selectDate('${d}')" class="nav-tab whitespace-nowrap text-[11px] ${selectionType === 'date' && selectedDateValue === d ? 'nav-tab-active' : 'nav-tab-inactive'}">${d}</button>`).join('');
         }
 
         function updateAnalysis() {
-            let filteredData = [];
-            let displayTitle = "";
-            let displaySub = "";
-            let dataForChart = [];
-            let countLabel = "Trips";
-            let totalValueToDisplay = 0;
-            
+            let filtered = [];
+            let chartTitle = "", chartSub = "", data = [];
+
             if (selectionType === 'weekday') {
-                filteredData = rawDataStore.filter(d => d.dayIdx === selectedWeekdayIdx);
-                const dayCount = new Set(filteredData.map(d => d.date)).size || 1;
-                const counts = {};
-                filteredData.forEach(d => counts[d.hour] = (counts[d.hour] || 0) + 1);
-
-                if (aggMode === 'avg') {
-                    dataForChart = Object.entries(counts).map(([h, c]) => ({ hour: h, count: Math.round(c / dayCount) }));
-                    totalValueToDisplay = dataForChart.reduce((acc, curr) => acc + curr.count, 0);
-                    displayTitle = `ภาพรวมเฉลี่ย (เฉพาะวัน${dayNames[selectedWeekdayIdx]})`;
-                    displaySub = `เฉลี่ยจากวัน${dayNames[selectedWeekdayIdx]} ทั้งหมด ${dayCount} วัน`;
-                    countLabel = "Avg";
-                } else {
-                    dataForChart = Object.entries(counts).map(([h, c]) => ({ hour: h, count: c }));
-                    totalValueToDisplay = filteredData.length;
-                    displayTitle = `ยอดรวมสะสม (เฉพาะวัน${dayNames[selectedWeekdayIdx]})`;
-                    displaySub = `รวมยอดของวัน${dayNames[selectedWeekdayIdx]} ทั้งหมด ${dayCount} วัน`;
-                    countLabel = "Total";
-                }
-            } 
-            else if (selectionType === 'date') {
-                filteredData = rawDataStore.filter(d => d.date === selectedDateValue);
-                const counts = {};
-                filteredData.forEach(d => counts[d.hour] = (counts[d.hour] || 0) + 1);
-                dataForChart = Object.entries(counts).map(([h, c]) => ({ hour: h, count: c }));
-                totalValueToDisplay = filteredData.length;
-                displayTitle = `รายงานประจำวันที่ ${selectedDateValue}`;
-                displaySub = `วัน${dayNames[getDayOfWeek(selectedDateValue)]} - ข้อมูลรายวัน`;
-                countLabel = "Trips";
-            }
-            else { 
+                filtered = rawDataStore.filter(d => d.dayIdx === selectedWeekdayIdx);
+                const dayCount = new Set(filtered.map(d => d.date)).size || 1;
+                const counts = {}; filtered.forEach(d => counts[d.hour] = (counts[d.hour] || 0) + 1);
+                data = Object.entries(counts).map(([h, c]) => ({ hour: h, count: aggMode === 'avg' ? Math.round(c / dayCount) : c }));
+                chartTitle = `${aggMode === 'avg' ? 'เฉลี่ย' : 'ยอดรวม'} วัน${dayNames[selectedWeekdayIdx]}`;
+                chartSub = `อ้างอิงจากข้อมูล ${dayCount} วัน`;
+            } else if (selectionType === 'date') {
+                filtered = rawDataStore.filter(d => d.date === selectedDateValue);
+                const counts = {}; filtered.forEach(d => counts[d.hour] = (counts[d.hour] || 0) + 1);
+                data = Object.entries(counts).map(([h, c]) => ({ hour: h, count: c }));
+                chartTitle = `วันที่ ${selectedDateValue}`;
+                chartSub = `วิเคราะห์ข้อมูลรายวัน`;
+            } else {
                 const dayCount = new Set(rawDataStore.map(d => d.date)).size || 1;
-                const counts = {};
-                rawDataStore.forEach(d => counts[d.hour] = (counts[d.hour] || 0) + 1);
-
-                if (aggMode === 'avg') {
-                    dataForChart = Object.entries(counts).map(([h, c]) => ({ hour: h, count: Math.round(c / dayCount) }));
-                    totalValueToDisplay = dataForChart.reduce((acc, curr) => acc + curr.count, 0);
-                    displayTitle = "ภาพรวมเฉลี่ย (ทุกวัน)";
-                    displaySub = `เฉลี่ยจากข้อมูลทั้งหมด ${dayCount} วัน`;
-                    countLabel = "Avg";
-                } else {
-                    dataForChart = Object.entries(counts).map(([h, c]) => ({ hour: h, count: c }));
-                    totalValueToDisplay = rawDataStore.length;
-                    displayTitle = "ยอดรวมสะสม (ทุกวัน)";
-                    displaySub = `ยอดสะสมจากทั้งหมด ${dayCount} วัน`;
-                    countLabel = "Total";
-                }
+                const counts = {}; rawDataStore.forEach(d => counts[d.hour] = (counts[d.hour] || 0) + 1);
+                data = Object.entries(counts).map(([h, c]) => ({ hour: h, count: aggMode === 'avg' ? Math.round(c / dayCount) : c }));
+                chartTitle = aggMode === 'avg' ? "ภาพรวมเฉลี่ยต่อวัน" : "ยอดรวมสะสมทั้งหมด";
+                chartSub = `คำนวณจากข้อมูล ${dayCount} วันที่บันทึก`;
             }
 
-            document.getElementById('chartTitle').innerText = displayTitle;
-            document.getElementById('chartValueTag').innerText = totalValueToDisplay.toLocaleString();
-            document.getElementById('chartSub').innerText = displaySub;
-            document.getElementById('rankTitle').innerText = `อันดับงาน (${selectionType === 'date' ? 'รายวัน' : (aggMode === 'avg' ? 'เฉลี่ย' : 'ยอดรวม')})`;
-
-            renderMiniStats(filteredData.length || rawDataStore.length, dataForChart, selectionType === 'date');
-            renderRankList(dataForChart, countLabel);
-            renderChart(dataForChart, countLabel);
+            document.getElementById('chartTitle').innerText = chartTitle;
+            document.getElementById('chartSub').innerText = chartSub;
+            document.getElementById('chartValueTag').innerText = data.reduce((a,b) => a+b.count, 0).toLocaleString();
+            
+            renderChart(data);
+            renderRankList(data);
+            renderMiniStats(filtered.length || rawDataStore.length, data);
         }
 
-        function renderMiniStats(total, currentData, isSingleDate) {
-            const peak = currentData.length ? Math.max(...currentData.map(d => d.count)) : 0;
+        function renderMiniStats(total, data) {
+            const peak = data.length ? Math.max(...data.map(d => d.count)) : 0;
             const dayCount = new Set(rawDataStore.map(d => d.date)).size;
-            const container = document.getElementById('miniStats');
-            
-            const stats = [
-                { label: 'Total Trips', val: total, color: 'text-blue-600' },
-                { label: 'Data Range', val: `${dayCount} วัน`, color: 'text-slate-600' },
-                { label: 'Peak Capacity', val: peak, color: 'text-blue-800' },
-                { label: 'Active Slots', val: currentData.filter(d => d.count > 0).length, color: 'text-emerald-600' }
-            ];
-
-            container.innerHTML = stats.map(s => `
-                <div class="glass-card p-4">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase mb-1">${s.label}</p>
-                    <p class="text-xl font-black inter-font ${s.color}">${s.val}</p>
+            document.getElementById('miniStats').innerHTML = [
+                { label: 'จำนวนรายการทั้งหมด', val: total },
+                { label: 'จำนวนวันที่พบ', val: dayCount },
+                { label: 'ค่าสูงสุดช่วงเวลา', val: peak },
+                { label: 'จำนวนช่วงเวลาที่มีงาน', val: data.length }
+            ].map(s => `
+                <div class="gear5-card p-5">
+                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">${s.label}</p>
+                    <p class="text-2xl font-black text-indigo-900">${s.val}</p>
                 </div>
             `).join('');
         }
 
-        function renderRankList(data, label) {
+        function renderRankList(data) {
             const sorted = [...data].sort((a,b) => b.count - a.count);
-            document.getElementById('rankCount').innerText = `${sorted.length} Slots`;
-            
-            const rankSection = document.getElementById('rankSection');
-            let html = '';
-            
-            sorted.forEach((item, idx) => {
-                const isTop3 = idx < 3;
-                const rankClass = idx === 0 ? 'rank-gold' : idx === 1 ? 'rank-silver' : idx === 2 ? 'rank-bronze' : '';
-                
-                if (isTop3) {
-                    html += `
-                        <div class="rank-item ${rankClass} animate-soft" style="animation-delay: ${idx * 0.1}s">
-                            <div class="flex justify-between items-center">
-                                <div>
-                                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">${idx === 0 ? '🏆 High Priority' : 'Rank ' + (idx + 1)}</span>
-                                    <p class="text-base font-black inter-font text-slate-800 leading-tight">${item.hour} น.</p>
-                                </div>
-                                <div class="text-right">
-                                    <p class="text-lg font-black inter-font text-slate-900">${item.count}</p>
-                                    <p class="text-[9px] text-slate-400 font-bold uppercase">${label}</p>
-                                </div>
-                            </div>
+            document.getElementById('rankCount').innerText = `${sorted.length} ช่วงเวลา`;
+            document.getElementById('rankSection').innerHTML = sorted.map((item, idx) => `
+                <div class="rank-item ${idx === 0 ? 'rank-gold' : ''} cursor-pointer hover:scale-[1.02] transition-all" onclick="openBreakdown('${item.hour}')">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">${idx === 0 ? '🏆 หนาแน่นที่สุด' : 'ลำดับที่ ' + (idx + 1)}</span>
+                            <p class="text-xl font-black text-indigo-950">${item.hour} น.</p>
                         </div>
-                    `;
-                } else {
-                    html += `
-                        <div class="flex items-center justify-between py-2 px-4 bg-white/60 rounded-lg border border-slate-100 hover:bg-white transition-all">
-                            <span class="text-[11px] font-bold text-slate-600">${item.hour} น.</span>
-                            <div class="flex items-center gap-2">
-                                <span class="text-[11px] font-black inter-font text-slate-800">${item.count}</span>
-                                <span class="text-[9px] font-bold text-slate-400 uppercase">${label}</span>
-                            </div>
+                        <div class="text-right">
+                            <p class="text-2xl font-black text-indigo-900">${item.count}</p>
                         </div>
-                    `;
-                }
-            });
-            
-            rankSection.innerHTML = html;
+                    </div>
+                </div>
+            `).join('');
         }
 
-        function renderChart(data, label) {
+        function renderChart(data) {
             const ctx = document.getElementById('peakChart').getContext('2d');
             const hours = Array.from({length: 10}, (_, i) => (i + 8).toString().padStart(2, '0') + ":00");
             const values = hours.map(h => data.find(d => d.hour === h)?.count || 0);
-
+            
             if (chartInstance) chartInstance.destroy();
-
-            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-            gradient.addColorStop(0, 'rgba(37, 99, 235, 0.15)');
-            gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
-
             chartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: hours,
                     datasets: [{
-                        label: label,
+                        label: 'ปริมาณงาน',
                         data: values,
-                        borderColor: '#2563eb',
-                        borderWidth: 3,
-                        pointBackgroundColor: '#2563eb',
-                        backgroundColor: gradient,
+                        borderColor: '#9d7dfa',
+                        borderWidth: 4,
+                        backgroundColor: 'rgba(157, 125, 250, 0.1)',
                         fill: true,
-                        tension: 0.4
+                        tension: 0.4,
+                        pointRadius: 5
                     }]
                 },
                 options: {
                     responsive: true, maintainAspectRatio: false,
                     plugins: { 
-                        legend: { display: false },
-                        datalabels: {
-                            anchor: 'end', align: 'top', color: '#2563eb',
-                            font: { weight: 'bold', size: 10 },
-                            display: (c) => c.dataset.data[c.dataIndex] > 0
-                        }
+                        legend: { display: false }, 
+                        datalabels: { 
+                            font: { weight: 'bold', family: 'Sarabun' }, 
+                            align: 'top',
+                            color: '#4f46e5'
+                        } 
                     },
-                    scales: {
-                        y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
-                        x: { grid: { display: false } }
+                    scales: { 
+                        y: { display: false, beginAtZero: true }, 
+                        x: { 
+                            grid: { display: false },
+                            ticks: { font: { family: 'Sarabun', weight: '600' } }
+                        } 
                     }
                 }
             });
         }
 
-        function clearCurrentAnalysis() {
-            rawDataStore = [];
-            document.getElementById('rawInput').value = '';
-            localStorage.removeItem('mflow_trip_draft');
-            document.getElementById('dashboardSection').classList.add('hidden');
-            document.getElementById('emptyState').classList.remove('hidden');
-            document.getElementById('statusDot').className = 'relative inline-flex rounded-full h-2 w-2 bg-slate-400';
-            showToast("🧹 ล้างข้อมูลปัจจุบันแล้ว (ประวัติยังคงอยู่)");
+        function openBreakdown(hour) {
+            let data = rawDataStore.filter(d => d.hour === hour);
+            if (selectionType === 'weekday') data = data.filter(d => d.dayIdx === selectedWeekdayIdx);
+            if (selectionType === 'date') data = data.filter(d => d.date === selectedDateValue);
+            
+            currentModalData = data;
+            document.getElementById('modalTitle').innerText = `สรุปช่วงเวลา ${hour} น.`;
+            document.getElementById('modalSub').innerText = `แสดงผลข้อมูลทั้งหมด ${data.length} รายการ`;
+            document.getElementById('modalTotalLabel').innerText = `รวมทั้งสิ้น: ${data.length} รายการ`;
+            document.getElementById('modalTableBody').innerHTML = data.map(d => `
+                <tr class="hover:bg-slate-50">
+                    <td class="py-4 px-4 font-black text-purple-600">${d.id}</td>
+                    <td class="py-4 px-4 font-bold text-slate-600">${d.date}</td>
+                    <td class="py-4 px-4 text-slate-400 font-bold">${dayNames[d.dayIdx]}</td>
+                    <td class="py-4 px-4 font-black text-indigo-950">${d.time}</td>
+                </tr>
+            `).join('');
+            document.getElementById('breakdownModal').style.display = 'flex';
         }
 
-        function clearHistoryAll() {
-            auditLog = [];
-            localStorage.removeItem('mflow_audit_history');
-            renderHistoryLog();
-            showToast("🗑️ ล้างประวัติการวางข้อมูลทั้งหมดแล้ว");
+        function closeModal() { document.getElementById('breakdownModal').style.display = 'none'; }
+
+        function copyTableToClipboard() {
+            let text = "เลข TripID\tวันที่\tวัน\tเวลา\n" + currentModalData.map(d => `${d.id}\t${d.date}\t${dayNames[d.dayIdx]}\t${d.time}`).join('\n');
+            const el = document.createElement('textarea'); el.value = text;
+            document.body.appendChild(el); el.select(); document.execCommand('copy');
+            document.body.removeChild(el); showToast("คัดลอกลงคลิปบอร์ดแล้ว!");
+        }
+
+        function clearCurrentAnalysis() {
+            rawDataStore = []; document.getElementById('dashboardSection').classList.add('hidden');
+            document.getElementById('emptyState').classList.remove('hidden');
+            document.getElementById('statusDot').classList.remove('active');
+            showToast("ล้างข้อมูลปัจจุบันสำเร็จ!");
         }
 
         function showToast(msg) {
             const t = document.getElementById('toast');
-            t.innerText = msg;
-            t.style.opacity = '1';
-            t.style.transform = 'translate(-50%, -20px)';
-            setTimeout(() => {
-                t.style.opacity = '0';
-                t.style.transform = 'translate(-50%, 0px)';
-            }, 2000);
+            t.innerText = msg; t.style.opacity = '1';
+            setTimeout(() => t.style.opacity = '0', 2000);
         }
+
+        window.onclick = (e) => { if (e.target.id == 'breakdownModal') closeModal(); }
     </script>
 </body>
 </html>
