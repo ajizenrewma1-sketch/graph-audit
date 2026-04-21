@@ -203,7 +203,10 @@
                 <div id="chartCard" class="lg:col-span-7 glass-card p-6 md:p-8 flex flex-col">
                     <div class="flex justify-between items-start mb-6">
                         <div>
-                            <h2 id="chartTitle" class="text-lg font-bold text-slate-800 header-font">รายงานความหนาแน่น</h2>
+                            <div class="flex items-baseline gap-2">
+                                <h2 id="chartTitle" class="text-lg font-bold text-slate-800 header-font">รายงานความหนาแน่น</h2>
+                                <span id="chartValueTag" class="text-sm font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg inter-font">0</span>
+                            </div>
                             <p id="chartSub" class="text-xs text-slate-400 font-medium">แสดงปริมาณงานช่วงเวลา 08:00 - 17:00</p>
                         </div>
                     </div>
@@ -246,17 +249,14 @@
         const dayNames = ["อาทิตย์", "จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์", "เสาร์"];
 
         window.onload = function() {
-            // Load Draft
             const savedDraft = localStorage.getItem('mflow_trip_draft');
             if (savedDraft) {
                 document.getElementById('rawInput').value = savedDraft;
             }
 
-            // Load Audit Log
             const savedLog = localStorage.getItem('mflow_audit_history');
             if (savedLog) {
                 auditLog = JSON.parse(savedLog);
-                // Auto-Retention: 7 Days
                 cleanOldHistory();
             }
         };
@@ -266,7 +266,6 @@
             localStorage.setItem('mflow_trip_draft', inputVal);
         }
 
-        // ฟังก์ชันล้างประวัติที่เก่ากว่า 7 วัน
         function cleanOldHistory() {
             const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
             const now = new Date().getTime();
@@ -313,7 +312,7 @@
         }
 
         function deleteSingleHistory(e, idx) {
-            e.stopPropagation(); // กันไม่ให้ไปเรียก restoreHistory
+            e.stopPropagation(); 
             auditLog.splice(idx, 1);
             localStorage.setItem('mflow_audit_history', JSON.stringify(auditLog));
             renderHistoryLog();
@@ -355,24 +354,19 @@
             });
 
             if (newEntries.length > 0) {
-                // บันทึกลง Audit Log
                 const now = new Date();
                 const timeLabel = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
                 
                 const logEntry = {
                     timestamp: timeLabel,
-                    created_at: now.toISOString(), // ใช้สำหรับตรวจสอบอายุ 7 วัน
+                    created_at: now.toISOString(),
                     count: newEntries.length,
                     raw: inputEl.value
                 };
 
-                // เพิ่มเข้าประวัติ (ไม่จำกัดจำนวน ตราบที่ยังไม่เกิน 7 วัน)
                 auditLog = [logEntry, ...auditLog];
-                
-                // ตรวจสอบ Auto-Retention ทันที
                 cleanOldHistory();
 
-                // ประมวลผลข้อมูลลง Dashboard
                 rawDataStore = [...rawDataStore, ...newEntries];
                 document.getElementById('emptyState').classList.add('hidden');
                 document.getElementById('dashboardSection').classList.remove('hidden');
@@ -381,7 +375,6 @@
                 refreshUI();
                 showToast(`✅ วิเคราะห์ ${newEntries.length} รายการ และบันทึกประวัติแล้ว`);
                 
-                // ล้างช่องกรอก
                 inputEl.value = '';
                 localStorage.removeItem('mflow_trip_draft');
             } else {
@@ -391,6 +384,10 @@
 
         function toggleAggMode(mode) {
             aggMode = mode;
+            if (selectionType === 'date') {
+                selectionType = 'all';
+                selectedDateValue = null;
+            }
             refreshUI();
         }
 
@@ -438,22 +435,23 @@
             let displaySub = "";
             let dataForChart = [];
             let countLabel = "Trips";
+            let totalValueToDisplay = 0;
             
             if (selectionType === 'weekday') {
                 filteredData = rawDataStore.filter(d => d.dayIdx === selectedWeekdayIdx);
-                const dayCount = new Set(filteredData.map(d => d.date)).size;
-                
+                const dayCount = new Set(filteredData.map(d => d.date)).size || 1;
+                const counts = {};
+                filteredData.forEach(d => counts[d.hour] = (counts[d.hour] || 0) + 1);
+
                 if (aggMode === 'avg') {
-                    const counts = {};
-                    filteredData.forEach(d => counts[d.hour] = (counts[d.hour] || 0) + 1);
-                    dataForChart = Object.entries(counts).map(([h, c]) => ({ hour: h, count: Math.round(c / (dayCount || 1)) }));
+                    dataForChart = Object.entries(counts).map(([h, c]) => ({ hour: h, count: Math.round(c / dayCount) }));
+                    totalValueToDisplay = dataForChart.reduce((acc, curr) => acc + curr.count, 0);
                     displayTitle = `ภาพรวมเฉลี่ย (เฉพาะวัน${dayNames[selectedWeekdayIdx]})`;
                     displaySub = `เฉลี่ยจากวัน${dayNames[selectedWeekdayIdx]} ทั้งหมด ${dayCount} วัน`;
                     countLabel = "Avg";
                 } else {
-                    const counts = {};
-                    filteredData.forEach(d => counts[d.hour] = (counts[d.hour] || 0) + 1);
                     dataForChart = Object.entries(counts).map(([h, c]) => ({ hour: h, count: c }));
+                    totalValueToDisplay = filteredData.length;
                     displayTitle = `ยอดรวมสะสม (เฉพาะวัน${dayNames[selectedWeekdayIdx]})`;
                     displaySub = `รวมยอดของวัน${dayNames[selectedWeekdayIdx]} ทั้งหมด ${dayCount} วัน`;
                     countLabel = "Total";
@@ -464,23 +462,25 @@
                 const counts = {};
                 filteredData.forEach(d => counts[d.hour] = (counts[d.hour] || 0) + 1);
                 dataForChart = Object.entries(counts).map(([h, c]) => ({ hour: h, count: c }));
+                totalValueToDisplay = filteredData.length;
                 displayTitle = `รายงานประจำวันที่ ${selectedDateValue}`;
-                displaySub = `วัน${dayNames[getDayOfWeek(selectedDateValue)]} - รายวัน`;
+                displaySub = `วัน${dayNames[getDayOfWeek(selectedDateValue)]} - ข้อมูลรายวัน`;
                 countLabel = "Trips";
             }
             else { 
                 const dayCount = new Set(rawDataStore.map(d => d.date)).size || 1;
+                const counts = {};
+                rawDataStore.forEach(d => counts[d.hour] = (counts[d.hour] || 0) + 1);
+
                 if (aggMode === 'avg') {
-                    const counts = {};
-                    rawDataStore.forEach(d => counts[d.hour] = (counts[d.hour] || 0) + 1);
                     dataForChart = Object.entries(counts).map(([h, c]) => ({ hour: h, count: Math.round(c / dayCount) }));
+                    totalValueToDisplay = dataForChart.reduce((acc, curr) => acc + curr.count, 0);
                     displayTitle = "ภาพรวมเฉลี่ย (ทุกวัน)";
                     displaySub = `เฉลี่ยจากข้อมูลทั้งหมด ${dayCount} วัน`;
                     countLabel = "Avg";
                 } else {
-                    const counts = {};
-                    rawDataStore.forEach(d => counts[d.hour] = (counts[d.hour] || 0) + 1);
                     dataForChart = Object.entries(counts).map(([h, c]) => ({ hour: h, count: c }));
+                    totalValueToDisplay = rawDataStore.length;
                     displayTitle = "ยอดรวมสะสม (ทุกวัน)";
                     displaySub = `ยอดสะสมจากทั้งหมด ${dayCount} วัน`;
                     countLabel = "Total";
@@ -488,15 +488,16 @@
             }
 
             document.getElementById('chartTitle').innerText = displayTitle;
+            document.getElementById('chartValueTag').innerText = totalValueToDisplay.toLocaleString();
             document.getElementById('chartSub').innerText = displaySub;
-            document.getElementById('rankTitle').innerText = `อันดับงาน (${aggMode === 'avg' && selectionType !== 'date' ? 'เฉลี่ย' : 'ยอดรวม'})`;
+            document.getElementById('rankTitle').innerText = `อันดับงาน (${selectionType === 'date' ? 'รายวัน' : (aggMode === 'avg' ? 'เฉลี่ย' : 'ยอดรวม')})`;
 
-            renderMiniStats(filteredData.length, dataForChart);
+            renderMiniStats(filteredData.length || rawDataStore.length, dataForChart, selectionType === 'date');
             renderRankList(dataForChart, countLabel);
             renderChart(dataForChart, countLabel);
         }
 
-        function renderMiniStats(total, currentData) {
+        function renderMiniStats(total, currentData, isSingleDate) {
             const peak = currentData.length ? Math.max(...currentData.map(d => d.count)) : 0;
             const dayCount = new Set(rawDataStore.map(d => d.date)).size;
             const container = document.getElementById('miniStats');
