@@ -176,14 +176,22 @@
             <div id="miniStats" class="grid grid-cols-2 md:grid-cols-4 gap-4 animate-soft"></div>
 
             <!-- Tab Navigation -->
-            <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-                <button id="overviewTab" onclick="switchView('overview')" class="nav-tab whitespace-nowrap">
-                    ภาพรวมเฉลี่ย
-                </button>
-                <button id="totalTab" onclick="switchView('total')" class="nav-tab whitespace-nowrap">
-                    ยอดรวมสะสม
-                </button>
-                <div id="dateTabs" class="flex gap-2 border-l border-slate-200 pl-2"></div>
+            <div class="space-y-4">
+                <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+                    <button id="overviewTab" onclick="switchView('overview')" class="nav-tab whitespace-nowrap">
+                        ภาพรวมเฉลี่ย
+                    </button>
+                    <button id="totalTab" onclick="switchView('total')" class="nav-tab whitespace-nowrap">
+                        ยอดรวมสะสม
+                    </button>
+                    <div id="dayOfWeekTabs" class="flex gap-2 border-l border-slate-200 pl-2">
+                        <!-- Day of week buttons will be here -->
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-2">เลือกตามวันที่:</span>
+                    <div id="dateTabs" class="flex gap-2"></div>
+                </div>
             </div>
 
             <div id="dashboardContent" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch view-visible">
@@ -231,7 +239,11 @@
         let rawDataStore = [];
         let currentMode = 'overview';
         let selectedDate = null;
+        let selectedDayIdx = null; // 0=Sunday, 1=Monday...
         let chartInstance = null;
+
+        const dayNames = ["อาทิตย์", "จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์", "เสาร์"];
+        const dayNamesEng = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
         const chartColors = [
             { main: '#2563eb', light: 'rgba(37, 99, 235, 0.12)' }, 
@@ -241,6 +253,16 @@
 
         function getRandomColor() {
             return chartColors[Math.floor(Math.random() * chartColors.length)];
+        }
+
+        function getDayOfWeek(dateStr) {
+            // dateStr format: DD/MM/YYYY or YYYY-MM-DD
+            // Split and handle Thai date year (if any)
+            let d = dateStr.split('/');
+            let year = parseInt(d[2]);
+            if (year > 2400) year -= 543; // Handle BE to AD
+            const dateObj = new Date(year, parseInt(d[1]) - 1, parseInt(d[0]));
+            return dateObj.getDay();
         }
 
         function processData() {
@@ -264,7 +286,11 @@
                         const hourNum = parseInt(timeStr.split(':')[0]);
                         const hour = hourNum.toString().padStart(2, '0') + ":00";
                         if (hourNum >= 8 && hourNum <= 17) {
-                            newEntries.push({ date: dateStr, hour: hour });
+                            newEntries.push({ 
+                                date: dateStr, 
+                                hour: hour,
+                                dayIdx: getDayOfWeek(dateStr)
+                            });
                         }
                     }
                 }
@@ -292,10 +318,20 @@
             document.getElementById('overviewTab').className = `nav-tab ${currentMode === 'overview' ? 'nav-tab-active' : 'nav-tab-inactive'}`;
             document.getElementById('totalTab').className = `nav-tab ${currentMode === 'total' ? 'nav-tab-active' : 'nav-tab-inactive'}`;
 
+            // Day of Week Tabs
+            const dayOfWeekContainer = document.getElementById('dayOfWeekTabs');
+            // We only show days that exist in the data
+            const existingDays = [...new Set(rawDataStore.map(d => d.dayIdx))].sort((a,b) => a - b);
+            dayOfWeekContainer.innerHTML = existingDays.map(idx => {
+                const isActive = (currentMode === 'weekday' && selectedDayIdx === idx);
+                return `<button onclick="switchWeekday(${idx})" class="nav-tab whitespace-nowrap ${isActive ? 'nav-tab-active' : 'nav-tab-inactive'}">วัน${dayNames[idx]}</button>`;
+            }).join('');
+
+            // Date Tabs
             const tabsContainer = document.getElementById('dateTabs');
             tabsContainer.innerHTML = dates.map(date => {
                 const isActive = (currentMode === 'daily' && selectedDate === date);
-                return `<button onclick="switchDate('${date}')" class="nav-tab whitespace-nowrap ${isActive ? 'nav-tab-active' : 'nav-tab-inactive'}">${date}</button>`;
+                return `<button onclick="switchDate('${date}')" class="nav-tab whitespace-nowrap text-[11px] ${isActive ? 'nav-tab-active' : 'nav-tab-inactive'}">${date}</button>`;
             }).join('');
 
             updateAnalysis();
@@ -303,31 +339,43 @@
 
         function switchView(mode) {
             if (currentMode === mode) return;
-            const content = document.getElementById('dashboardContent');
-            content.classList.replace('view-visible', 'view-hidden');
-            
-            setTimeout(() => {
+            triggerViewTransition(() => {
                 currentMode = mode;
-                updateAnalysis();
-                const dates = [...new Set(rawDataStore.map(d => d.date))].sort();
-                renderUI(dates);
-                content.classList.replace('view-hidden', 'view-visible');
-            }, 300);
+                refreshUI();
+            });
         }
 
         function switchDate(date) {
             if (currentMode === 'daily' && selectedDate === date) return;
-            const content = document.getElementById('dashboardContent');
-            content.classList.replace('view-visible', 'view-hidden');
-            
-            setTimeout(() => {
+            triggerViewTransition(() => {
                 currentMode = 'daily';
                 selectedDate = date;
-                updateAnalysis();
-                const dates = [...new Set(rawDataStore.map(d => d.date))].sort();
-                renderUI(dates);
+                refreshUI();
+            });
+        }
+
+        function switchWeekday(idx) {
+            if (currentMode === 'weekday' && selectedDayIdx === idx) return;
+            triggerViewTransition(() => {
+                currentMode = 'weekday';
+                selectedDayIdx = idx;
+                refreshUI();
+            });
+        }
+
+        function triggerViewTransition(callback) {
+            const content = document.getElementById('dashboardContent');
+            content.classList.replace('view-visible', 'view-hidden');
+            setTimeout(() => {
+                callback();
                 content.classList.replace('view-hidden', 'view-visible');
             }, 300);
+        }
+
+        function refreshUI() {
+            const dates = [...new Set(rawDataStore.map(d => d.date))].sort();
+            renderUI(dates);
+            updateAnalysis();
         }
 
         function updateAnalysis() {
@@ -338,19 +386,19 @@
             let currentStatsTotal = 0;
 
             const totalItems = rawDataStore.length;
-            const totalDays = new Set(rawDataStore.map(d => d.date)).size;
+            const totalDaysCount = new Set(rawDataStore.map(d => d.date)).size;
 
             if (currentMode === 'overview') {
                 const counts = {};
                 rawDataStore.forEach(d => counts[d.hour] = (counts[d.hour] || 0) + 1);
                 processedData = Object.entries(counts).map(([h, c]) => ({ 
                     hour: h, 
-                    count: Math.round(c / totalDays) 
+                    count: Math.round(c / totalDaysCount) 
                 }));
                 displayModeLabel = "Avg";
                 currentStatsTotal = totalItems;
                 title = "รายงานภาพรวม Audit (เฉลี่ย)";
-                sub = `ประมวลผลช่วงเวลา 08:00 - 17:00 (เฉลี่ยจากทั้งหมด ${totalDays} วัน)`;
+                sub = `ประมวลผลช่วงเวลา 08:00 - 17:00 (เฉลี่ยจากทั้งหมด ${totalDaysCount} วัน)`;
                 document.getElementById('rankTitle').innerText = "อันดับงาน (เฉลี่ยรายชั่วโมง)";
             } 
             else if (currentMode === 'total') {
@@ -363,8 +411,23 @@
                 displayModeLabel = "Total";
                 currentStatsTotal = totalItems;
                 title = "รายงานยอดรวมสะสมสุทธิ";
-                sub = `แสดงยอดรวม TRIP ทั้งหมด ${totalItems} รายการ แยกตามช่วงเวลา (สะสม ${totalDays} วัน)`;
+                sub = `แสดงยอดรวม TRIP ทั้งหมด ${totalItems} รายการ แยกตามช่วงเวลา (สะสม ${totalDaysCount} วัน)`;
                 document.getElementById('rankTitle').innerText = "อันดับยอดสะสม (สุทธิ)";
+            }
+            else if (currentMode === 'weekday') {
+                const weekdayData = rawDataStore.filter(d => d.dayIdx === selectedDayIdx);
+                const uniqueDatesInDay = new Set(weekdayData.map(d => d.date)).size;
+                const counts = {};
+                weekdayData.forEach(d => counts[d.hour] = (counts[d.hour] || 0) + 1);
+                processedData = Object.entries(counts).map(([h, c]) => ({ 
+                    hour: h, 
+                    count: c 
+                }));
+                displayModeLabel = "Total";
+                currentStatsTotal = weekdayData.length;
+                title = `วิเคราะห์เฉพาะ "วัน${dayNames[selectedDayIdx]}"`;
+                sub = `ดึงข้อมูลจากวัน${dayNames[selectedDayIdx]}ทั้งหมดที่มี (${uniqueDatesInDay} วัน) รวม ${weekdayData.length} TRIP`;
+                document.getElementById('rankTitle').innerText = `อันดับงาน (วัน${dayNames[selectedDayIdx]})`;
             }
             else {
                 const dailyData = rawDataStore.filter(d => d.date === selectedDate);
@@ -381,7 +444,7 @@
             document.getElementById('chartTitle').innerText = title;
             document.getElementById('chartSub').innerText = sub;
             
-            renderMiniStats(currentStatsTotal, totalDays, processedData);
+            renderMiniStats(currentStatsTotal, totalDaysCount, processedData);
             renderView(processedData, displayModeLabel);
         }
 
